@@ -64,6 +64,7 @@ const SpriteSelectorComponent = function (props) {
         onExportSprite,
         onFileUploadClick,
         onNewSpriteClick,
+        onAIClick,
         onPaintSpriteClick,
         onSelectSprite,
         onSpriteUpload,
@@ -145,9 +146,7 @@ const SpriteSelectorComponent = function (props) {
                     }, {
                         title: intl.formatMessage(messages.addSpriteFromAI),
                         img: AIIcon,
-                        onClick: () => {
-                            console.log("AI Clicked"); //CHANGE FOR AI
-                        }
+                        onClick: onAIClick
                     }
                 ]}
                 title={intl.formatMessage(messages.addSpriteFromLibrary)}
@@ -178,6 +177,7 @@ SpriteSelectorComponent.propTypes = {
     onExportSprite: PropTypes.func,
     onFileUploadClick: PropTypes.func,
     onNewSpriteClick: PropTypes.func,
+    onAIClick: PropTypes.func,
     onPaintSpriteClick: PropTypes.func,
     onSelectSprite: PropTypes.func,
     onSpriteUpload: PropTypes.func,
