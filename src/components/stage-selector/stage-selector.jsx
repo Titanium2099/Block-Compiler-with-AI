@@ -13,6 +13,7 @@ import fileUploadIcon from '../action-menu/icon--file-upload.svg';
 import paintIcon from '../action-menu/icon--paint.svg';
 import surpriseIcon from '../action-menu/icon--surprise.svg';
 import searchIcon from '../action-menu/icon--search.svg';
+import AIIcon from '../action-menu/icon--AI.svg';
 
 const messages = defineMessages({
     addBackdropFromLibrary: {
@@ -24,6 +25,11 @@ const messages = defineMessages({
         id: 'gui.stageSelector.addBackdropFromPaint',
         description: 'Button to add a stage in the target pane from paint',
         defaultMessage: 'Paint'
+    },
+    addSpriteFromAI: {
+        defaultMessage: 'Generate with AI',
+        description: 'Button to generate a new costume by using AI',
+        id: 'gui.spriteSelector.addSpriteFromAI'
     },
     addBackdropFromSurprise: {
         id: 'gui.stageSelector.addBackdropFromSurprise',
@@ -120,6 +126,12 @@ const StageSelector = props => {
                         title: intl.formatMessage(messages.addBackdropFromLibrary),
                         img: searchIcon,
                         onClick: onNewBackdropClick
+                    }, {
+                        title: intl.formatMessage(messages.addSpriteFromAI),
+                        img: AIIcon,
+                        onClick: () => {
+                            console.log("AI Clicked"); //CHANGE FOR AI
+                        }
                     }
                 ]}
                 title={intl.formatMessage(messages.addBackdropFromLibrary)}

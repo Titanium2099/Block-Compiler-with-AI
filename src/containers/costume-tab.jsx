@@ -33,6 +33,7 @@ import fileUploadIcon from '../components/action-menu/icon--file-upload.svg';
 import paintIcon from '../components/action-menu/icon--paint.svg';
 import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 import searchIcon from '../components/action-menu/icon--search.svg';
+import AIIcon from '../components/action-menu/icon--AI.svg';
 
 import {getCostumeLibrary, getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
 
@@ -52,6 +53,11 @@ let messages = defineMessages({
         description: 'Button to add a blank costume in the editor tab',
         id: 'gui.costumeTab.addBlankCostume'
     },
+    addAICostumeMsg: {
+        defaultMessage: 'Generate a New Image',
+        description: 'Button to generate a new costume by using AI',
+        id: 'gui.costumeTab.addCostumeFromAI'
+    },
     addSurpriseCostumeMsg: {
         defaultMessage: 'Surprise',
         description: 'Button to add a surprise costume in the editor tab',
@@ -66,7 +72,7 @@ let messages = defineMessages({
         defaultMessage: 'Upload Costume',
         description: 'Button to add a costume by uploading a file in the editor tab',
         id: 'gui.costumeTab.addFileCostume'
-    }
+    },
 });
 
 messages = {...messages, ...sharedMessages};
@@ -304,6 +310,12 @@ class CostumeTab extends React.Component {
                         title: intl.formatMessage(addLibraryMessage),
                         img: searchIcon,
                         onClick: addLibraryFunc
+                    },{
+                        title: intl.formatMessage(messages.addAICostumeMsg),
+                        img: AIIcon,
+                        onClick: () => {
+                            console.log("AI Clicked"); //CHANGE FOR AI
+                        }
                     }
                 ]}
                 dragType={DragConstants.COSTUME}

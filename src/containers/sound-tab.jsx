@@ -12,6 +12,7 @@ import addSoundFromRecordingIcon from '../components/asset-panel/icon--add-sound
 import fileUploadIcon from '../components/action-menu/icon--file-upload.svg';
 import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 import searchIcon from '../components/action-menu/icon--search.svg';
+import AIIcon from '../components/action-menu/icon--AI.svg';
 
 import RecordModal from './record-modal.jsx';
 import SoundEditor from './sound-editor.jsx';
@@ -221,6 +222,11 @@ class SoundTab extends React.Component {
                 defaultMessage: 'Choose a Sound',
                 description: 'Button to add a sound in the editor tab',
                 id: 'gui.soundTab.addSoundFromLibrary'
+            },
+            createSound: {
+                defaultMessage: 'Generate with AI',
+                description: 'Button to generate a new sound by using AI',
+                id: 'gui.soundTab.createSound'
             }
         });
 
@@ -250,6 +256,12 @@ class SoundTab extends React.Component {
                     title: intl.formatMessage(messages.addSound),
                     img: searchIcon,
                     onClick: onNewSoundFromLibraryClick
+                },{
+                    title: intl.formatMessage(messages.createSound),
+                    img: AIIcon,
+                    onClick: () =>{
+                        console.log("AI Clicked"); //CHANGE FOR AI
+                    }
                 }] : []}
                 dragType={DragConstants.SOUND}
                 isRtl={isRtl}
