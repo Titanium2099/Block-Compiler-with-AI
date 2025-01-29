@@ -13,6 +13,7 @@ const AIBlob = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const size = Math.min(canvas.clientWidth, canvas.clientHeight);
     const renderer = new THREE.WebGLRenderer({
       canvas,
       context: canvas.getContext('webgl2'),
@@ -22,9 +23,9 @@ const AIBlob = () => {
 
     const noise3D = createNoise3D(Math.random);
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
 
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setSize(size, size);
     renderer.setPixelRatio(window.devicePixelRatio || 1);
 
     camera.position.z = 5;
@@ -71,13 +72,12 @@ const AIBlob = () => {
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
         uniforms: {
-            //colors: { value: [new THREE.Color(0xE4FF1A), new THREE.Color(0xff396b), new THREE.Color(0x3ac2fb), new THREE.Color(0x04E762)] },
             colors: { value: [new THREE.Color(0x04E762), new THREE.Color(0xff396b), new THREE.Color(0x3ac2fb), new THREE.Color(0xE4FF1A)] },
             metallicFactor: { value: 1 } // Reduce metallic appearance
-            //0.6 for light mode 1 for dark
         }
     });
 
+    /*
     const lightTop = new THREE.DirectionalLight(0x000000, .7);
     lightTop.position.set(0, 500, 200);
     lightTop.castShadow = true;
@@ -89,26 +89,23 @@ const AIBlob = () => {
     scene.add(lightBottom);
 
     const ambientLight = new THREE.AmbientLight(0x798296);
-    scene.add(ambientLight);
+    scene.add(ambientLight);*/
 
     const sphere = new THREE.Mesh(geometry, material);
 
     scene.add(sphere);
 
-
-
     const update = () => {
         let processing = 1;
-        let speed = 51;
+        //let speed = 51; <- 51 on active??
+        let speed = 13;
         let spikesVal = 0.6;
     
         let time = performance.now() * 0.00001 * speed * Math.pow(processing, 3);
         let spikes = spikesVal * processing;
-
-        //console.log(sphere.geometry);
     
         let positionAttribute = sphere.geometry.attributes.position;
-            let tempVec = new THREE.Vector3();
+        let tempVec = new THREE.Vector3();
     
         for (let i = 0; i < positionAttribute.count; i++) {
             tempVec.fromBufferAttribute(positionAttribute, i);
@@ -128,9 +125,9 @@ const AIBlob = () => {
       const time = performance.now() * 0.0005;
       camera.position.x = 5 * Math.cos(time);
       camera.position.z = 5 * Math.sin(time);
-     camera.lookAt(scene.position);
+      camera.lookAt(scene.position);
 
-        renderer.render(scene, camera);
+      renderer.render(scene, camera);
       requestAnimationFrame(animate);
     };
 
@@ -141,15 +138,8 @@ const AIBlob = () => {
     };
   }, []);
 
-  /*
-    return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#1c1f29' }}>
-      <canvas ref={canvasRef} style={{ width: '1000px', height: '500px' }}></canvas>
-    </div>
-  );
-  */
   return (
-      <canvas ref={canvasRef} style={{ width: '1000px', height: '500px',filter: 'blur(20px)' }}></canvas>
+      <canvas ref={canvasRef} style={{ width: '500px', height: '500px', filter: 'blur(50px)' }}></canvas>
   );
 };
 

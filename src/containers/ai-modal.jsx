@@ -55,8 +55,11 @@ class AIModal extends React.PureComponent {
                 id={this.props.id}
                 onRequestClose={this.handleClose}
             >
-                <AIBlob
-                />
+                <div style={{ marginLeft: 'auto', marginRight: 'auto', width: 'fit-content' }}>
+                    <AIBlob
+                    />
+                    <p>Describe your image</p>
+                </div>
             </Modal>
         );
     }
