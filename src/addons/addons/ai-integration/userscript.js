@@ -1,13 +1,17 @@
 //WHEN PROCESSING BLOCKS: MAKE SURE THAT ALL SHADOW BLOCKS ARE PRESENT
 //ADD SUPPORT FOR LISTS
 
+const apiUrl = "http://127.0.0.1:5000/chat";
+const authToken = prompt("Please enter the auth token for the AI service")
+
 document.AI_INTEGRATION = {
   AI_currently_blabbering: false,
   currentInputHasAttachment: false,
   attachmentDetails: {
     attachmentText: "",
     attachmentBlocks: "",
-  }
+  },
+  chatHistory: [],
 };
 
 document.addEventListener("mousemove", (event) => {
@@ -15,7 +19,7 @@ document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
-function createBasePopup(fileAttached=false,fileAttachedText="Unknown - Entire Sprite") {
+function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite") {
   document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
   document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
   //create new blob
@@ -99,6 +103,8 @@ function createBasePopup(fileAttached=false,fileAttachedText="Unknown - Entire S
   document.body.appendChild(div);
 
   var textareaa = document.getElementById('auto-resizing-textarea');
+  //focus on textarea
+  textareaa.focus();
 
   textareaa.value = "";
   textareaa.addEventListener('input', () => {
@@ -111,7 +117,7 @@ function createBasePopup(fileAttached=false,fileAttachedText="Unknown - Entire S
       textareaa.style.top = '2px';
     }
   });
-  
+
   popupFunctionality();
 }
 
@@ -126,15 +132,15 @@ function popupFunctionality() {
       internal();
     }
   });
-  
-  function internal(){
-    if(document.AI_INTEGRATION.AI_currently_blabbering) {
+
+  function internal() {
+    if (document.AI_INTEGRATION.AI_currently_blabbering) {
       return;
     }
     document.AI_INTEGRATION.AI_currently_blabbering = true;
     const input = document.getElementById('auto-resizing-textarea');
-  
-    if(document.AI_INTEGRATION.currentInputHasAttachment) {
+
+    if (document.AI_INTEGRATION.currentInputHasAttachment) {
       document.getElementById('attachedFile').remove();
       var userMessage = document.createElement('div');
       userMessage.className = 'user-message';
@@ -153,7 +159,7 @@ function popupFunctionality() {
                 </div>
                 `;
       document.getElementById('chat_content').appendChild(userMessage);
-    }else{
+    } else {
       var userMessage = document.createElement('div');
       userMessage.className = 'user-message';
       userMessage.innerHTML = `
@@ -172,9 +178,61 @@ function popupFunctionality() {
                 </div>
             `;
     document.getElementById('chat_content').appendChild(loadingDots);
+    const messageContents = input.value;
     input.value = '';
     //scroll to bottom
     document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+
+    var data = {
+      api_key: authToken,
+      message: messageContents,
+      history: document.AI_INTEGRATION.chatHistory,
+    };
+    // Set up the POST request
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',  // Sending JSON data
+      },
+      body: JSON.stringify(data),  // Convert data to JSON format
+    })
+      .then(response => {
+        if (response.ok) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          let streamResult = '';
+
+          //remove the loading dots
+          document.getElementById('AI_is_thinking_what_to_blabber').remove();
+          
+          var aiMessage = document.createElement('div');
+          aiMessage.className = 'ai-message';
+          aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
+          document.getElementById('chat_content').appendChild(aiMessage);
+
+          // Stream the response
+          reader.read().then(function processText({ done, value }) {
+            if (done) {
+              document.AI_INTEGRATION.AI_currently_blabbering = false;
+              document.getElementById('currentlyBlabberingOnThis').id = '';
+              document.AI_INTEGRATION.chatHistory.push({"role":"user","message":messageContents});
+              document.AI_INTEGRATION.chatHistory.push({"role":"assistant","message":streamResult});
+              document.AI_INTEGRATION.currentInputHasAttachment = false;
+              return;
+            };
+            // Decode the chunk and append to the stream result
+            streamResult += decoder.decode(value, { stream: true });
+            console.log(streamResult);  // Print or use the response as needed
+            document.getElementById('currentlyBlabberingOnThis').innerText = streamResult;
+            document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+            reader.read().then(processText);
+          });
+        } else {
+          console.error('Error:', response.statusText);
+        }
+      })
+      .catch(error => console.error('Request failed', error));
   }
 }
 
