@@ -4,7 +4,7 @@
 const apiUrl = "http://127.0.0.1:5000/chat";
 const authToken = prompt("Please enter the auth token for the AI service")
 var converter;
-const resistanceThreshold = 10; 
+const resistanceThreshold = 10;
 
 document.AI_INTEGRATION = {
   AI_currently_blabbering: false,
@@ -15,6 +15,7 @@ document.AI_INTEGRATION = {
   },
   CodeChunks: [],
   chatHistory: [],
+  popupOpen: false,
 };
 
 document.addEventListener("mousemove", (event) => {
@@ -23,6 +24,10 @@ document.addEventListener("mousemove", (event) => {
 });
 
 function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
+  if (document.AI_INTEGRATION.popupOpen) {
+    return;
+  }
+  document.AI_INTEGRATION.popupOpen = true;
   document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
   document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
   //create new blob
@@ -38,20 +43,32 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
           </svg>
           <p
               style='margin:0;margin-right:5px;font-family:"Helvetica Neue",sans-serif;font-size:11px;color:#7b7665'>${fileAttachedText}</p>
-          <svg fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg class= size-6 stroke= currentColor stroke-width= 1.5 style= height:13px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer>
+          <svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg class= size-6 stroke= currentColor stroke-width= 1.5 style= height:13px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer>
               <path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path>
           </svg>
       </div>` : '';
+
   const div = document.createElement('div');
   div.className = 'container';
   div.style.zIndex = 100000000;
   div.style.position = 'absolute';
-  //get current coordinates of mouse
-  div.style.left = document.AI_INTEGRATION.X_COORDINATE + 'px';
-  div.style.top = document.AI_INTEGRATION.Y_COORDINATE + 'px';
 
+  const divWidth = 452;
+  const divHeight = 302;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = document.documentElement.clientHeight;
+  const scrollY = window.scrollY || document.documentElement.scrollTop;
+  const tolerance = 10;
+  let newLeft = document.AI_INTEGRATION.X_COORDINATE;
+  let newTop = document.AI_INTEGRATION.Y_COORDINATE;
+  if (newLeft < tolerance) newLeft = tolerance;
+  if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+  if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
+  if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
+  div.style.left = `${newLeft}px`;
+  div.style.top = `${newTop}px`;
   div.innerHTML = `
-  <div style="padding: 5px;display: flex;"><svg fill="none" viewBox="0 0 24 24" xmlns="http://" www.w3.org="" 2000="" svg="" class="size-6" stroke="currentColor" stroke-width="1.5" style="height:19px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: auto;">
+  <div style="padding: 5px;display: flex;"><svg fill="none" viewBox="0 0 24 24" xmlns="http://" www.w3.org="" 2000="" svg="" class="size-6" stroke="currentColor" stroke-width="1.5" style="height:19px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: auto;" id="closePopup">
                 <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
   </div>
@@ -83,35 +100,62 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   </div>`;
 
   let offsetX, offsetY, isDragging = false, startX, startY, hasMoved = false;
-  
+
   div.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      hasMoved = false;
-      startX = e.clientX;
-      startY = e.clientY;
-      offsetX = e.clientX - div.offsetLeft;
-      offsetY = e.clientY - div.offsetTop;
-      div.style.cursor = 'grabbing';
+    isDragging = true;
+    hasMoved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    offsetX = e.clientX - div.offsetLeft;
+    offsetY = e.clientY - div.offsetTop;
+    div.style.cursor = 'grabbing';
   });
-  
+
   document.addEventListener('mousemove', (e) => {
-      if (isDragging) {
-          if (!hasMoved) {
-              const deltaX = Math.abs(e.clientX - startX);
-              const deltaY = Math.abs(e.clientY - startY);
-              if (deltaX < resistanceThreshold && deltaY < resistanceThreshold) {
-                  return; 
-              }
-              hasMoved = true;
-          }
-            div.style.left = (e.clientX - offsetX) + 'px';
-          div.style.top = (e.clientY - offsetY) + 'px';
+    if (isDragging) {
+      if (!hasMoved) {
+        const deltaX = Math.abs(e.clientX - startX);
+        const deltaY = Math.abs(e.clientY - startY);
+        if (deltaX < resistanceThreshold && deltaY < resistanceThreshold) {
+          return;
+        }
+        hasMoved = true;
       }
+
+      // Get viewport and scroll dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = document.documentElement.clientHeight;
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+
+      // Get div dimensions
+      const divRect = div.getBoundingClientRect();
+      const divWidth = divRect.width;
+      const divHeight = divRect.height;
+
+      // Define tolerance
+      const tolerance = 10;
+
+      // Calculate new position
+      let newLeft = e.clientX - offsetX;
+      let newTop = e.clientY - offsetY + scrollY; // Adjust for scrolling
+
+      // Prevent moving out of bounds with tolerance
+      if (newLeft < tolerance) newLeft = tolerance;
+      if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+      if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
+      if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
+
+      div.style.left = newLeft + 'px';
+      div.style.top = newTop + 'px';
+    }
   });
-  
+
+
+
+
   document.addEventListener('mouseup', () => {
-      isDragging = false;
-      div.style.cursor = "default";
+    isDragging = false;
+    div.style.cursor = "default";
   });
 
   //add to body
@@ -146,6 +190,18 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 function popupFunctionality() {
   converter = new showdown.Converter();
+  document.getElementById('removeAttachement').addEventListener('click', () => {
+    document.getElementById('attachedFile').remove();
+    document.AI_INTEGRATION.currentInputHasAttachment = false;
+    document.AI_INTEGRATION.attachmentDetails.attachmentText = "";
+    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
+  });
+
+  document.getElementById('closePopup').addEventListener('click', () => {
+    document.querySelector('.container').remove();
+    document.AI_INTEGRATION.popupOpen = false;
+  });
+
   document.getElementById('submitChat').addEventListener('click', () => {
     internal();
   });
