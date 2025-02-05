@@ -4,6 +4,7 @@
 const apiUrl = "http://127.0.0.1:5000/chat";
 const authToken = prompt("Please enter the auth token for the AI service")
 var converter;
+const resistanceThreshold = 10; 
 
 document.AI_INTEGRATION = {
   AI_currently_blabbering: false,
@@ -57,7 +58,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   <div class= content id= chat_content>
       <div style= display:flex;flex-direction:column;margin-top:10px>
           <div style= width:79px;height:79px;margin-left:auto;margin-right:auto>
-              <iframe src= ${url} style=width:102px;border:0;position:relative;top:-9px;left:-14px;background-color:transparent;z-index:0;height:106px;overflow:hidden></iframe>
+              <iframe src= ${url} style=width:102px;border:0;position:relative;top:-9px;left:-14px;background-color:transparent;z-index:0;height:106px;overflow:hidden;user-select:none;pointer-events:none;"></iframe>
           </div>
           <p style= text-align:center;color:#7c7766;font-weight:900;z-index:10>Hi I'm Torchy, How can I help you today?
       </div>
@@ -81,26 +82,38 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
       ${attachedFile}
   </div>`;
 
-  let offsetX, offsetY, isDragging = false;
-
+  let offsetX, offsetY, isDragging = false, startX, startY, hasMoved = false;
+  
   div.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - div.getBoundingClientRect().left;
-    offsetY = e.clientY - div.getBoundingClientRect().top;
-    div.style.cursor = 'grabbing';
+      isDragging = true;
+      hasMoved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      offsetX = e.clientX - div.offsetLeft;
+      offsetY = e.clientY - div.offsetTop;
+      div.style.cursor = 'grabbing';
   });
-
+  
   document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      div.style.left = e.clientX - offsetX + 'px';
-      div.style.top = e.clientY - offsetY + 'px';
-    }
+      if (isDragging) {
+          if (!hasMoved) {
+              const deltaX = Math.abs(e.clientX - startX);
+              const deltaY = Math.abs(e.clientY - startY);
+              if (deltaX < resistanceThreshold && deltaY < resistanceThreshold) {
+                  return; 
+              }
+              hasMoved = true;
+          }
+            div.style.left = (e.clientX - offsetX) + 'px';
+          div.style.top = (e.clientY - offsetY) + 'px';
+      }
+  });
+  
+  document.addEventListener('mouseup', () => {
+      isDragging = false;
+      div.style.cursor = "default";
   });
 
-  document.addEventListener('mouseup', () => {
-    isDragging = false;
-    div.style.cursor = 'grab';
-  });
   //add to body
   document.body.appendChild(div);
 
@@ -217,7 +230,7 @@ function popupFunctionality() {
 
           //remove the loading dots
           document.getElementById('AI_is_thinking_what_to_blabber').remove();
-          
+
           var aiMessage = document.createElement('div');
           aiMessage.className = 'ai-message';
           aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
@@ -228,8 +241,8 @@ function popupFunctionality() {
             if (done) {
               document.AI_INTEGRATION.AI_currently_blabbering = false;
               document.getElementById('currentlyBlabberingOnThis').id = '';
-              document.AI_INTEGRATION.chatHistory.push({"role":"user","message":messageContents});
-              document.AI_INTEGRATION.chatHistory.push({"role":"assistant","message":streamResult});
+              document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
+              document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
               document.AI_INTEGRATION.currentInputHasAttachment = false;
               document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs);
               //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
@@ -294,7 +307,7 @@ export default async function ({ addon, console }) {
           console.log(Blockly.Xml.blockToDom(block));
           console.log(Blockly.Xml.domToText(Blockly.Xml.blockToDom(block)));
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, "Unknown - Code Block", "Explain this:"); 
+          createBasePopup(true, "Unknown - Code Block", "Explain this:");
         },
         separator: true,
       });
@@ -310,7 +323,7 @@ export default async function ({ addon, console }) {
         callback: () => {
           console.log("Debug this code", block);
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, "Unknown - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:"); 
+          createBasePopup(true, "Unknown - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
         },
       });
       return items;
