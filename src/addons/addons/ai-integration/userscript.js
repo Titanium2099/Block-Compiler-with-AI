@@ -109,6 +109,14 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   textareaa.focus();
 
   textareaa.value = inputValue;
+  if (textareaa.value.length > 64 || textareaa.value.includes('\n')) { //must be done once in the beginning due to the fact that `inputValue` might be a long string
+    textareaa.style.height = 'auto';
+    textareaa.style.height = `${textareaa.scrollHeight}px`;
+    textareaa.style.top = '0px';
+  } else {
+    textareaa.style.height = '20px';
+    textareaa.style.top = '2px';
+  }
   textareaa.addEventListener('input', () => {
     if (textareaa.value.length > 64 || textareaa.value.includes('\n')) { //make sure there is more than one line
       textareaa.style.height = 'auto';
@@ -267,6 +275,8 @@ export default async function ({ addon, console }) {
         text: "Explain this Sprite",
         callback: () => {
           console.log("Explain this Sprite");
+          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+          createBasePopup(true, "Unknown - Entire Sprite", "Explain this Sprite:");
         },
         separator: true,
       });
@@ -299,6 +309,8 @@ export default async function ({ addon, console }) {
         enabled: true,
         callback: () => {
           console.log("Debug this code", block);
+          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
+          createBasePopup(true, "Unknown - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:"); 
         },
       });
       return items;
@@ -312,6 +324,8 @@ export default async function ({ addon, console }) {
         enabled: true,
         callback: () => {
           console.log("New Chat on this block", block);
+          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
+          createBasePopup(false, "", "");
         },
       });
       return items;
@@ -320,6 +334,7 @@ export default async function ({ addon, console }) {
   );
 
   window.addEventListener('ai-button-clicked', function () {
-    console.log('Successfully received');
+    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+    createBasePopup(true, "Unknown - Entire Sprite", "");
   });
 }
