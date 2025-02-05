@@ -12,6 +12,7 @@ document.AI_INTEGRATION = {
     attachmentText: "",
     attachmentBlocks: "",
   },
+  CodeChunks: [],
   chatHistory: [],
 };
 
@@ -20,7 +21,7 @@ document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
-function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite") {
+function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
   document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
   document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
   //create new blob
@@ -92,7 +93,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   document.addEventListener('mousemove', (e) => {
     if (isDragging) {
       div.style.left = e.clientX - offsetX + 'px';
-      div.style.top = e.clientY - offsetY + 40 + 'px';
+      div.style.top = e.clientY - offsetY + 'px';
     }
   });
 
@@ -107,7 +108,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   //focus on textarea
   textareaa.focus();
 
-  textareaa.value = "";
+  textareaa.value = inputValue;
   textareaa.addEventListener('input', () => {
     if (textareaa.value.length > 64 || textareaa.value.includes('\n')) { //make sure there is more than one line
       textareaa.style.height = 'auto';
@@ -125,7 +126,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 function popupFunctionality() {
   converter = new showdown.Converter();
   document.getElementById('submitChat').addEventListener('click', () => {
-    internal
+    internal();
   });
   //add send command for enter + shift
   document.getElementById('auto-resizing-textarea').addEventListener('keydown', (e) => {
@@ -180,10 +181,11 @@ function popupFunctionality() {
                 </div>
             `;
     document.getElementById('chat_content').appendChild(loadingDots);
-    const messageContents = input.value;
+    const messageContents = input.value + "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks;
     input.value = '';
     //scroll to bottom
     document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+    document.AI_INTEGRATION.CodeChunks = [];
 
     var data = {
       api_key: authToken,
@@ -221,12 +223,19 @@ function popupFunctionality() {
               document.AI_INTEGRATION.chatHistory.push({"role":"user","message":messageContents});
               document.AI_INTEGRATION.chatHistory.push({"role":"assistant","message":streamResult});
               document.AI_INTEGRATION.currentInputHasAttachment = false;
+              document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs);
+              //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
               return;
             };
             // Decode the chunk and append to the stream result
             streamResult += decoder.decode(value, { stream: true });
             console.log(streamResult);  // Print or use the response as needed
-            document.getElementById('currentlyBlabberingOnThis').innerHTML = converter.makeHtml(streamResult);
+
+            let instanceCount = 0;
+            var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK{${++instanceCount}}`);
+            edittedStreamResult = converter.makeHtml(edittedStreamResult);
+            //FUTURE REPLACE `````` with code block
+            document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p>currently writing a code block</p></div>");
             //document.getElementById('currentlyBlabberingOnThis').innerText = streamResult;
             document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
             reader.read().then(processText);
@@ -274,7 +283,8 @@ export default async function ({ addon, console }) {
           console.log("Explain this block", block);
           console.log(Blockly.Xml.blockToDom(block));
           console.log(Blockly.Xml.domToText(Blockly.Xml.blockToDom(block)));
-          createBasePopup(true, "Unknown - 25 lines");
+          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
+          createBasePopup(true, "Unknown - Code Block", "Explain this:"); 
         },
         separator: true,
       });
