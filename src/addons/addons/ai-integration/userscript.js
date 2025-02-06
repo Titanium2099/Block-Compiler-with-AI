@@ -23,6 +23,10 @@ document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
+function currentSpriteName(){
+  return document.getElementsByClassName("input_input-form_l9eYg sprite-info_sprite-input_17wjb")[0].value; //hacky way to get the sprite name, should be replaced with a better way
+}
+
 function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
   if (document.AI_INTEGRATION.popupOpen) {
     return;
@@ -77,7 +81,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
           <div style= width:79px;height:79px;margin-left:auto;margin-right:auto>
               <iframe src= ${url} style=width:102px;border:0;position:relative;top:-9px;left:-14px;background-color:transparent;z-index:0;height:106px;overflow:hidden;user-select:none;pointer-events:none;"></iframe>
           </div>
-          <p style= text-align:center;color:#7c7766;font-weight:900;z-index:10>Hi I'm Torchy, How can I help you today?
+          <p style= text-align:center;color:#7c7766;font-weight:900;z-index:10;user-select:none;pointer-events:none>Hi I'm Torchy, How can I help you today?
       </div>
   </div>
   <div style= min-height:fit-content;flex-direction:column class= input-container id= chat_box>
@@ -345,7 +349,7 @@ export default async function ({ addon, console }) {
         callback: () => {
           console.log("Explain this Sprite");
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
-          createBasePopup(true, "Unknown - Entire Sprite", "Explain this Sprite:");
+          createBasePopup(true, currentSpriteName() + " - Entire Sprite", "Explain this Sprite:");
         },
         separator: true,
       });
@@ -363,7 +367,7 @@ export default async function ({ addon, console }) {
           console.log(Blockly.Xml.blockToDom(block));
           console.log(Blockly.Xml.domToText(Blockly.Xml.blockToDom(block)));
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, "Unknown - Code Block", "Explain this:");
+          createBasePopup(true, currentSpriteName() + " - Code Block", "Explain this:");
         },
         separator: true,
       });
@@ -379,7 +383,7 @@ export default async function ({ addon, console }) {
         callback: () => {
           console.log("Debug this code", block);
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, "Unknown - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
+          createBasePopup(true, currentSpriteName() + " - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
         },
       });
       return items;
@@ -404,6 +408,6 @@ export default async function ({ addon, console }) {
 
   window.addEventListener('ai-button-clicked', function () {
     document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
-    createBasePopup(true, "Unknown - Entire Sprite", "");
+    createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
   });
 }
