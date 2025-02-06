@@ -313,9 +313,11 @@ class TextInput extends React.Component {
         });
     }
     render () {
+        const { className, ...rest } = this.props; // Extract className and pass other props
         return (
             <input
-                {...this.props}
+                {...rest}
+                className={`default-text-input ${className || ''}`.trim()} // Merge custom and default classes
                 value={this.state.value === null ? this.props.value : this.state.value}
                 onFocus={this.handleFocus}
                 onBlur={this.handleFlush}
@@ -421,20 +423,23 @@ const Setting = ({
                     />
                 </React.Fragment>
             )}
-            {(setting.type === 'string' || setting.type === 'untranslated') && (
+            {(setting.type === 'string' || setting.type === 'long_string' || setting.type === 'untranslated') && (
                 <React.Fragment>
                     {label}
                     <TextInput
                         id={uniqueId}
                         type="text"
                         value={value}
+                        className={setting.type === 'long_string' ? styles.longStringSetting : ''}
                         onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
                     />
+                    {setting.type !== 'long_string' && (
                     <ResetButton
                         addonId={addonId}
                         settingId={settingId}
                         forTextInput
                     />
+        )}
                 </React.Fragment>
             )}
             {setting.type === 'color' && (
