@@ -4,6 +4,12 @@ const manifest = {
   "noTranslations": true,
   "name": "AI integration into the editor",
   "description": "Adds AI integration into the editor including code completion, code generation, sprite generation, background generation, and more.",
+  "info": [
+    {
+      "text": "You must have a Gemini API key to use this addon. To get one, visit https://aistudio.google.com/app/apikey -> new key -> copy the key and paste it into the box below.",
+      "id": "warning"
+    }
+  ],
   "credits": [
     {
       "name": "CodeTorch"
@@ -15,8 +21,18 @@ const manifest = {
       "url": "userscript.js"
     }
   ],
+  "settings": [
+    {
+      "id": "GeminiAPIKey",
+      "name": "Gemini API Key",
+      "type": "long_string",
+      "default": "",
+    }
+  ],
   "dynamicDisable": true,
-  "tags": [],
+  "tags": [
+    "new"
+  ],
   "enabledByDefault": true
 };
 export default manifest;
