@@ -178,17 +178,22 @@ CreditList.propTypes = {
     }))
 };
 
-const Switch = ({onChange, value, ...props}) => (
-    <button
-        className={styles.switch}
-        state={value ? 'on' : 'off'}
-        role="checkbox"
-        aria-checked={value ? 'true' : 'false'}
-        tabIndex="0"
-        onClick={() => onChange(!value)}
-        {...props}
-    />
-);
+const Switch = ({onChange, value, disabled = true, ...props}) => {
+    if (disabled) {
+        return null;
+    }
+    return (
+        <button
+            className={styles.switch}
+            state={value ? 'on' : 'off'}
+            role="checkbox"
+            aria-checked={value ? 'true' : 'false'}
+            tabIndex="0"
+            onClick={() => onChange(!value)}
+            {...props}
+        />
+    );
+};
 Switch.propTypes = {
     onChange: PropTypes.func,
     value: PropTypes.bool
@@ -566,6 +571,7 @@ const Addon = ({
                 <div className={styles.addonSwitch}>
                     <Switch
                         value={settings.enabled}
+                        disabled={id == "ai-integration"}
                         onChange={value => {
                             if (
                                 !value ||
