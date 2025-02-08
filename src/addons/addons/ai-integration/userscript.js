@@ -16,6 +16,7 @@ document.AI_INTEGRATION = {
   CodeChunks: [],
   chatHistory: [],
   popupOpen: false,
+  canUse: true,
 };
 
 document.addEventListener("mousemove", (event) => {
@@ -37,6 +38,44 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   //create new blob
   const blob = new Blob(["<html lang=en><meta charset=UTF-8><style>@keyframes scaleUpDown{0%,100%{transform:scaleY(1) scaleX(1)}50%,90%{transform:scaleY(1.1)}75%{transform:scaleY(.95)}80%{transform:scaleX(.95)}}@keyframes shake{0%,100%{transform:skewX(0) scale(1)}50%{transform:skewX(5deg) scale(.9)}}@keyframes particleUp{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;top:-100%;transform:scale(.5)}}@keyframes glow{0%,100%{background-color:#ef5a00}50%{background-color:#ff7800}}.fire{width:60px;height:60px;background-color:transparent;margin-left:12px;margin-top:17px;position:absolute}.fire-center{position:absolute;height:100%;width:100%;animation:scaleUpDown 3s ease-out;animation-iteration-count:infinite;animation-fill-mode:both}.fire-center .main-fire{position:absolute;width:100%;height:100%;background-image:radial-gradient(farthest-corner at 10px 0,#d43300 0,#ef5a00 95%);transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-center .particle-fire{position:absolute;top:60%;left:45%;width:2px;height:2px;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right{height:100%;width:100%;position:absolute;animation:shake 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right .main-fire{position:absolute;top:15%;right:-25%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-right .particle-fire{position:absolute;top:45%;left:50%;width:3.0303030303030303px;height:3.0303030303030303px;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left{position:absolute;height:100%;width:100%;animation:shake 3s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left .main-fire{position:absolute;top:15%;left:-20%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-left .particle-fire{position:absolute;top:10%;left:20%;width:10%;height:10%;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 3s infinite ease-out 0;animation-fill-mode:both}.fire-bottom .main-fire{position:absolute;top:30%;left:20%;width:75%;height:75%;background-color:#ff7800;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 100% 40%;filter:blur(10px);animation:glow 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}</style><body style=background-color:#111111><div class=fire style=display:table-footer-group><div class=fire-left><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-center><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-right><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-bottom><div class=main-fire></div></div></div></body></html>"], { type: "text/html" });
   const url = URL.createObjectURL(blob);
+
+  if(!document.AI_INTEGRATION.canUse){
+    const div = document.createElement('div');
+    div.className = 'container';
+    div.id = 'torchyPopup';
+    div.style.zIndex = 100000000;
+    div.style.position = 'absolute';
+    const divWidth = 452;
+    const divHeight = 302;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const tolerance = 10;
+    let newLeft = document.AI_INTEGRATION.X_COORDINATE;
+    let newTop = document.AI_INTEGRATION.Y_COORDINATE;
+    if (newLeft < tolerance) newLeft = tolerance;
+    if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+    if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
+    if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
+    div.style.left = `${newLeft}px`;
+    div.style.top = `${newTop}px`;
+    div.innerHTML = `<div class="content" id="chat_content" style="display: flex;flex-direction: column;">
+      <div style="padding: 5px;display: flex;"><svg fill="none" viewBox="0 0 24 24" xmlns="http://" www.w3.org="" 2000="" svg="" class="size-6" stroke="currentColor" stroke-width="1.5" style="height:19px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: auto;" id="closePopup">
+                <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+  </div><div style="display:flex;flex-direction:column;margin:auto;">
+          <div style="width:79px;height:79px;margin-left:auto;margin-right:auto">
+              <iframe src="${url}" style="width:102px;border:0;position:relative;top:-9px;left:-14px;background-color:transparent;z-index:0;height:106px;overflow:hidden;user-select:none;pointer-events:none;&quot;"></iframe>
+          </div>
+          <p style="text-align:center;color:#7c7766;font-weight:900;z-index:10;user-select:none;pointer-events:none;width: 300px;margin-left: auto;margin-right: auto;">To use Torchy, please add your API key in the addons page</p></div>
+  </div>`;
+    document.body.appendChild(div);
+    document.getElementById('closePopup').addEventListener('click', () => {
+      document.getElementById('torchyPopup').remove();
+      document.AI_INTEGRATION.popupOpen = false;
+    });
+    return;
+  }
   //create new div
   const attachedFile = fileAttached ? `<div
           style="border:1px solid #3a3b3b;border-radius:6px;overflow:scroll;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
@@ -192,6 +231,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   popupFunctionality();
 }
 
+
 function popupFunctionality() {
   converter = new showdown.Converter();
   document.getElementById('removeAttachement').addEventListener('click', () => {
@@ -333,6 +373,7 @@ export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
   authToken = addon.settings.get("GeminiAPIKey");
+
   //create new CSS (style for popup)
   const style = document.createElement('style');
   style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid #3A3B3B; border-radius: 6px; background-color: #111; display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 225px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid #3A3B3B; margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message * {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } }`;
@@ -342,6 +383,14 @@ export default async function ({ addon, console }) {
   js.src = "https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js";
   document.head.appendChild(js);
 
+  if(authToken === ""){
+    document.AI_INTEGRATION.canUse = false;
+    window.addEventListener('ai-button-clicked', function () {
+      document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+      createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
+    });
+    return;
+  }
   addon.tab.createBlockContextMenu(
     (items) => {
       items.push({

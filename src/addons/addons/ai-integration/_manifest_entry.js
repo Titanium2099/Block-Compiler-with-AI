@@ -6,7 +6,7 @@ const manifest = {
   "description": "Adds AI integration into the editor including code completion, code generation, sprite generation, background generation, and more.",
   "info": [
     {
-      "text": "You must have a Gemini API key to use this addon. To get one, visit https://aistudio.google.com/app/apikey -> new key -> copy the key and paste it into the box below.",
+      "text": "You must have a Gemini API key to use the AI features. To get one, visit https://aistudio.google.com/app/apikey -> new key -> copy the key and paste it into the box below.",
       "id": "warning"
     }
   ],
