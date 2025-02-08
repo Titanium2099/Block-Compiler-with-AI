@@ -1,5 +1,7 @@
 //WHEN PROCESSING BLOCKS: MAKE SURE THAT ALL SHADOW BLOCKS ARE PRESENT
-//ADD SUPPORT FOR LISTS
+
+import GetSVG from "./parser.js";
+
 
 const apiUrl = "http://127.0.0.1:5000/chat";
 let authToken;
