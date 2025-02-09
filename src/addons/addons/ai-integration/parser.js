@@ -8,15 +8,16 @@
  *   });
  */
 export default class GetSVG {
-  constructor(blockXml,Blockly) {
-    this.Blockly = Blockly;
-    this.blockXml = blockXml;
+  constructor() {
+    //this.blockXml = blockXml;
     this.exSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     this.exSVG.setAttribute("xmlns:html", "http://www.w3.org/1999/xhtml");
     this.exSVG.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
     this.exSVG.setAttribute("version", "1.1");
   }
-
+  defineBlockly(Blockly) {
+    this.Blockly = Blockly;
+  }
   // Method to set CSS variables for the element
   setCSSVars(element) {
     for (let property of document.documentElement.style) {
@@ -50,13 +51,14 @@ export default class GetSVG {
   }
 
   // Main method to fetch the SVG for a given blockXml
-  async getSVG() {
+  async getSVG(blockXml) {
+    this.blockXml = this.Blockly.Xml.textToDom(blockXml);
+
     let workspace = this.Blockly.getMainWorkspace(); // Get the existing workspace
 
     // Store existing block IDs before adding new blocks
     let existingBlockIds = workspace.getAllBlocks().map(block => block.id);
 
-    // Convert XML to Blockly block in the workspace
     let block = this.Blockly.Xml.domToBlock(this.blockXml, workspace);
 
     // Get the exported SVG

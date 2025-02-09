@@ -8,6 +8,10 @@ let authToken;
 var converter;
 const resistanceThreshold = 10;
 
+const xmlParser = new DOMParser();
+const xmlSerializer = new XMLSerializer();
+const blockParser = new GetSVG();
+
 document.AI_INTEGRATION = {
   AI_currently_blabbering: false,
   currentInputHasAttachment: false,
@@ -29,6 +33,39 @@ document.addEventListener("mousemove", (event) => {
 function currentSpriteName(){
   return document.getElementsByClassName("input_input-form_l9eYg sprite-info_sprite-input_17wjb")[0].value; //hacky way to get the sprite name, should be replaced with a better way
 }
+
+async function handleRawCodeChunk(codeChunk){
+  let response = {
+    "variables": [],
+    "lists": [],
+    "rawXML": codeChunk,
+    "BlocksAsXML": "",
+    "blocksAsSVG": "",
+    "status": "success"
+  }
+  try{
+    codeChunk = "<BlockChunkdata2938512938>"+ codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
+    let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
+    for(let i = 0; i < xmlCode.getElementsByTagName("variableCreationRequest").length; i++){
+      response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
+      //delete the variable creation request
+      xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
+    }
+    for(let i = 0; i < xmlCode.getElementsByTagName("listCreationRequest").length; i++){
+      response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[i].textContent);
+      //delete the list creation request
+      xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
+    }
+    response.BlocksAsXML = xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "");
+    response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML);
+    return response;
+  }catch(e){
+    console.error(e);
+    response.status = "error";
+    return response;
+  }
+}
+
 
 function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
   if (document.AI_INTEGRATION.popupOpen) {
@@ -347,6 +384,11 @@ function popupFunctionality() {
               document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
               document.AI_INTEGRATION.currentInputHasAttachment = false;
               document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs);
+              for(let i = 0; i < document.AI_INTEGRATION.CodeChunks.length; i++){
+                handleRawCodeChunk(document.AI_INTEGRATION.CodeChunks[i]).then((response) => {
+                  console.log(response);
+                });
+              }
               //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
               return;
             };
@@ -373,6 +415,8 @@ function popupFunctionality() {
 
 export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
+  window.Blockly = Blockly;
+  blockParser.defineBlockly(Blockly);
 
   authToken = addon.settings.get("GeminiAPIKey");
 
