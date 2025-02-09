@@ -20,6 +20,7 @@ document.AI_INTEGRATION = {
     attachmentBlocks: "",
   },
   CodeChunks: [],
+  processedCodeChunks: [],
   chatHistory: [],
   popupOpen: false,
   canUse: true,
@@ -30,11 +31,11 @@ document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
-function currentSpriteName(){
+function currentSpriteName() {
   return document.getElementsByClassName("input_input-form_l9eYg sprite-info_sprite-input_17wjb")[0].value; //hacky way to get the sprite name, should be replaced with a better way
 }
 
-async function handleRawCodeChunk(codeChunk){
+async function handleRawCodeChunk(codeChunk) {
   let response = {
     "variables": [],
     "lists": [],
@@ -43,15 +44,15 @@ async function handleRawCodeChunk(codeChunk){
     "blocksAsSVG": "",
     "status": "success"
   }
-  try{
-    codeChunk = "<BlockChunkdata2938512938>"+ codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
+  try {
+    codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
     let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
-    for(let i = 0; i < xmlCode.getElementsByTagName("variableCreationRequest").length; i++){
+    for (let i = 0; i < xmlCode.getElementsByTagName("variableCreationRequest").length; i++) {
       response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
       //delete the variable creation request
       xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
     }
-    for(let i = 0; i < xmlCode.getElementsByTagName("listCreationRequest").length; i++){
+    for (let i = 0; i < xmlCode.getElementsByTagName("listCreationRequest").length; i++) {
       response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[i].textContent);
       //delete the list creation request
       xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
@@ -59,7 +60,7 @@ async function handleRawCodeChunk(codeChunk){
     response.BlocksAsXML = xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "");
     response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML);
     return response;
-  }catch(e){
+  } catch (e) {
     console.error(e);
     response.status = "error";
     return response;
@@ -78,7 +79,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   const blob = new Blob(["<html lang=en><meta charset=UTF-8><style>@keyframes scaleUpDown{0%,100%{transform:scaleY(1) scaleX(1)}50%,90%{transform:scaleY(1.1)}75%{transform:scaleY(.95)}80%{transform:scaleX(.95)}}@keyframes shake{0%,100%{transform:skewX(0) scale(1)}50%{transform:skewX(5deg) scale(.9)}}@keyframes particleUp{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;top:-100%;transform:scale(.5)}}@keyframes glow{0%,100%{background-color:#ef5a00}50%{background-color:#ff7800}}.fire{width:60px;height:60px;background-color:transparent;margin-left:12px;margin-top:17px;position:absolute}.fire-center{position:absolute;height:100%;width:100%;animation:scaleUpDown 3s ease-out;animation-iteration-count:infinite;animation-fill-mode:both}.fire-center .main-fire{position:absolute;width:100%;height:100%;background-image:radial-gradient(farthest-corner at 10px 0,#d43300 0,#ef5a00 95%);transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-center .particle-fire{position:absolute;top:60%;left:45%;width:2px;height:2px;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right{height:100%;width:100%;position:absolute;animation:shake 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right .main-fire{position:absolute;top:15%;right:-25%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-right .particle-fire{position:absolute;top:45%;left:50%;width:3.0303030303030303px;height:3.0303030303030303px;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left{position:absolute;height:100%;width:100%;animation:shake 3s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left .main-fire{position:absolute;top:15%;left:-20%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-left .particle-fire{position:absolute;top:10%;left:20%;width:10%;height:10%;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 3s infinite ease-out 0;animation-fill-mode:both}.fire-bottom .main-fire{position:absolute;top:30%;left:20%;width:75%;height:75%;background-color:#ff7800;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 100% 40%;filter:blur(10px);animation:glow 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}</style><body style=background-color:#111111><div class=fire style=display:table-footer-group><div class=fire-left><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-center><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-right><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-bottom><div class=main-fire></div></div></div></body></html>"], { type: "text/html" });
   const url = URL.createObjectURL(blob);
 
-  if(!document.AI_INTEGRATION.canUse){
+  if (!document.AI_INTEGRATION.canUse) {
     const div = document.createElement('div');
     div.className = 'container';
     div.id = 'torchyPopup';
@@ -375,26 +376,63 @@ function popupFunctionality() {
           aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
           document.getElementById('chat_content').appendChild(aiMessage);
 
+          const domParser = new DOMParser();
           // Stream the response
           reader.read().then(function processText({ done, value }) {
             if (done) {
               document.AI_INTEGRATION.AI_currently_blabbering = false;
-              document.getElementById('currentlyBlabberingOnThis').id = '';
               document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
               document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
               document.AI_INTEGRATION.currentInputHasAttachment = false;
-              document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs);
-              for(let i = 0; i < document.AI_INTEGRATION.CodeChunks.length; i++){
-                handleRawCodeChunk(document.AI_INTEGRATION.CodeChunks[i]).then((response) => {
-                  console.log(response);
+
+              async function processAndRenderCodeChunks() {
+                document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs) || [];
+                document.AI_INTEGRATION.processedCodeChunks = [];
+
+                const processedChunks = await Promise.all(
+                  document.AI_INTEGRATION.CodeChunks.map(chunk => handleRawCodeChunk(chunk))
+                );
+
+                document.AI_INTEGRATION.processedCodeChunks = processedChunks;
+
+                let instanceCount = -1;
+                var editedStreamResult = streamResult.replace(/```(.*?)```/gs, () => {
+                  instanceCount++;
+                  let Div = document.createElement('div');
+                  Div.id = `TEMPCODEBLOCK${instanceCount}`;
+                  Div.style.position = 'absolute';
+                  Div.style.opacity = '0';
+                  Div.style.pointerEvents = 'none';
+                  Div.style.zIndex = '-9999';
+                  Div.style.width = '500px';
+                  Div.innerHTML =  `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
+                  document.body.appendChild(Div);
+                  let codeBlockWidth = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBBox().width;
+                  let codeBlockHeight = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBoundingClientRect().height;
+                  let scale = 100 / document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].children[0].getBBox().width;
+                  document.getElementById(`TEMPCODEBLOCK${instanceCount}`).children[0].children[0].setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
+                  document.getElementById(`TEMPCODEBLOCK${instanceCount}`).remove();
+
+                  let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
+                  svg = svg.body.children[0];
+                  svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
+                  return `<div id="CODEBLOCK${instanceCount}">${svg.outerHTML}</div>`;
                 });
+
+                document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
+                for(let i = 0; i <= instanceCount; i++) {
+                  var currentElement = document.getElementById(`CODEBLOCK${i}`).children[0]
+                  currentElement.style.width = (currentElement.getBoundingClientRect().width * (100 / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                }
+                document.getElementById('currentlyBlabberingOnThis').id = '';
               }
+              processAndRenderCodeChunks();
               //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
               return;
             };
             // Decode the chunk and append to the stream result
             streamResult += decoder.decode(value, { stream: true });
-            console.log(streamResult);  // Print or use the response as needed
+            //console.log(streamResult);  // Print or use the response as needed
 
             let instanceCount = 0;
             var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK{${++instanceCount}}`);
@@ -429,7 +467,7 @@ export default async function ({ addon, console }) {
   js.src = "https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js";
   document.head.appendChild(js);
 
-  if(authToken === ""){
+  if (authToken === "") {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
       document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
