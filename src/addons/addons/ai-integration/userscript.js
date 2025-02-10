@@ -47,13 +47,13 @@ async function handleRawCodeChunk(codeChunk) {
   try {
     codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
     let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
-    for (let i = 0; i < xmlCode.getElementsByTagName("variableCreationRequest").length; i++) {
+    while(xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
       response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
       //delete the variable creation request
       xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
     }
-    for (let i = 0; i < xmlCode.getElementsByTagName("listCreationRequest").length; i++) {
-      response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[i].textContent);
+    while(xmlCode.getElementsByTagName("listCreationRequest").length > 0) {
+      response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[0].textContent);
       //delete the list creation request
       xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
     }
@@ -386,6 +386,7 @@ function popupFunctionality() {
               document.AI_INTEGRATION.currentInputHasAttachment = false;
 
               async function processAndRenderCodeChunks() {
+                var randomId = Math.random().toString(36).substr(2, 5).toUpperCase();
                 document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs) || [];
                 document.AI_INTEGRATION.processedCodeChunks = [];
 
@@ -396,8 +397,13 @@ function popupFunctionality() {
                 document.AI_INTEGRATION.processedCodeChunks = processedChunks;
 
                 let instanceCount = -1;
-                var editedStreamResult = streamResult.replace(/```(.*?)```/gs, () => {
+                var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs,"CODECHUNK23407283947");
+                editedStreamResult = converter.makeHtml(editedStreamResult)
+                editedStreamResult = editedStreamResult.replace("CODECHUNK23407283947", () => {
                   instanceCount++;
+                  if(document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error"){
+                    return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
+                  }
                   let Div = document.createElement('div');
                   Div.id = `TEMPCODEBLOCK${instanceCount}`;
                   Div.style.position = 'absolute';
@@ -405,24 +411,25 @@ function popupFunctionality() {
                   Div.style.pointerEvents = 'none';
                   Div.style.zIndex = '-9999';
                   Div.style.width = '500px';
-                  Div.innerHTML =  `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
+                  Div.innerHTML = `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
                   document.body.appendChild(Div);
                   let codeBlockWidth = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBBox().width;
                   let codeBlockHeight = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBoundingClientRect().height;
-                  let scale = 100 / document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].children[0].getBBox().width;
-                  document.getElementById(`TEMPCODEBLOCK${instanceCount}`).children[0].children[0].setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
                   document.getElementById(`TEMPCODEBLOCK${instanceCount}`).remove();
 
                   let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
                   svg = svg.body.children[0];
                   svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
-                  return `<div id="CODEBLOCK${instanceCount}">${svg.outerHTML}</div>`;
+                  return `<div><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
                 });
 
                 document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
-                for(let i = 0; i <= instanceCount; i++) {
-                  var currentElement = document.getElementById(`CODEBLOCK${i}`).children[0]
-                  currentElement.style.width = (currentElement.getBoundingClientRect().width * (100 / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                for (let i = 0; i <= instanceCount; i++) {
+                  let currentWidth = 125;
+                  var currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
+                  currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                  currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
+                  currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
                 }
                 document.getElementById('currentlyBlabberingOnThis').id = '';
               }
@@ -453,14 +460,13 @@ function popupFunctionality() {
 
 export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
-  window.Blockly = Blockly;
   blockParser.defineBlockly(Blockly);
 
   authToken = addon.settings.get("GeminiAPIKey");
 
   //create new CSS (style for popup)
   const style = document.createElement('style');
-  style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid #3A3B3B; border-radius: 6px; background-color: #111; display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 225px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid #3A3B3B; margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message * {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } }`;
+  style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid #3A3B3B; border-radius: 6px; background-color: #111; display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 225px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid #3A3B3B; margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message *:not(svg):not(svg *) {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } }`;
   document.head.appendChild(style);
 
   const js = document.createElement('script');
