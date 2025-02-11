@@ -425,9 +425,23 @@ function popupFunctionality() {
 
                 document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
                 for (let i = 0; i <= instanceCount; i++) {
-                  let currentWidth = 125;
-                  var currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
+                  let currentWidth = 150;
+                  const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
                   currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+
+                  //THE SMARTED/MOST INSANE CODE THAT WORKS IN THE HISTORY OF JS
+                  const currentText = currentElement.querySelector("text");
+                  const oldText = currentText.innerHTML;
+                  currentText.innerHTML = "a";
+
+                  var currentHeight = currentText.getBoundingClientRect().height
+                  while (currentHeight > 16) {
+                    currentWidth -= 5;
+                    currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                    currentHeight = currentText.getBoundingClientRect().height;
+                  }
+                  currentText.innerHTML = oldText;
+
                   currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
                   currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
                 }
