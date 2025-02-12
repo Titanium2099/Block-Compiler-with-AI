@@ -20,6 +20,7 @@ document.AI_INTEGRATION = {
     attachmentBlocks: "",
   },
   CodeChunks: [],
+  AllCodeChunksEverAdded: [],
   processedCodeChunks: [],
   chatHistory: [],
   popupOpen: false,
@@ -399,11 +400,12 @@ function popupFunctionality() {
                 let instanceCount = -1;
                 var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs,"CODECHUNK23407283947");
                 editedStreamResult = converter.makeHtml(editedStreamResult)
-                editedStreamResult = editedStreamResult.replace("CODECHUNK23407283947", () => {
+                editedStreamResult = editedStreamResult.replaceAll("CODECHUNK23407283947", () => {
                   instanceCount++;
                   if(document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error"){
                     return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
                   }
+                  document.AI_INTEGRATION.AllCodeChunksEverAdded.push(document.AI_INTEGRATION.processedCodeChunks[instanceCount]);
                   let Div = document.createElement('div');
                   Div.id = `TEMPCODEBLOCK${instanceCount}`;
                   Div.style.position = 'absolute';
@@ -420,7 +422,7 @@ function popupFunctionality() {
                   let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
                   svg = svg.body.children[0];
                   svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
-                  return `<div><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
+                  return `<div uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
                 });
 
                 document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
@@ -443,6 +445,15 @@ function popupFunctionality() {
                   currentText.innerHTML = oldText;
 
                   currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
+                  currentElement.parentElement.parentElement.addEventListener("click",function(){
+                      var workspace = Blockly.getMainWorkspace();
+                      var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
+                      //Blockly.Xml.domToWorkspace(xml, workspace);
+                      const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
+                      const x = workspace.scrollX || 0;
+                      const y = workspace.scrollY || 0; 
+                      newBlock.moveBy(x, y);
+                  });
                   currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
                 }
                 document.getElementById('currentlyBlabberingOnThis').id = '';
@@ -475,7 +486,6 @@ function popupFunctionality() {
 export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
   blockParser.defineBlockly(Blockly);
-
   authToken = addon.settings.get("GeminiAPIKey");
 
   //create new CSS (style for popup)
