@@ -48,12 +48,12 @@ async function handleRawCodeChunk(codeChunk) {
   try {
     codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
     let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
-    while(xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
+    while (xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
       response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
       //delete the variable creation request
       xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
     }
-    while(xmlCode.getElementsByTagName("listCreationRequest").length > 0) {
+    while (xmlCode.getElementsByTagName("listCreationRequest").length > 0) {
       response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[0].textContent);
       //delete the list creation request
       xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
@@ -274,11 +274,11 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 
 function popupFunctionality() {
-  function defineShowdown(){
-    if(typeof showdown != "undefined"){
+  function defineShowdown() {
+    if (typeof showdown != "undefined") {
       converter = new showdown.Converter();
-    }else{
-      setTimeout(defineShowdown,10);
+    } else {
+      setTimeout(defineShowdown, 10);
     }
   }
   defineShowdown();
@@ -405,11 +405,11 @@ function popupFunctionality() {
                 document.AI_INTEGRATION.processedCodeChunks = processedChunks;
 
                 let instanceCount = -1;
-                var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs,"CODECHUNK23407283947");
+                var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs, "CODECHUNK23407283947");
                 editedStreamResult = converter.makeHtml(editedStreamResult)
                 editedStreamResult = editedStreamResult.replaceAll("CODECHUNK23407283947", () => {
                   instanceCount++;
-                  if(document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error"){
+                  if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
                     return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
                   }
                   document.AI_INTEGRATION.AllCodeChunksEverAdded.push(document.AI_INTEGRATION.processedCodeChunks[instanceCount]);
@@ -434,34 +434,46 @@ function popupFunctionality() {
 
                 document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
                 for (let i = 0; i <= instanceCount; i++) {
-                  let currentWidth = 150;
-                  const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
-                  currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
-
-                  //THE SMARTED/MOST INSANE CODE THAT WORKS IN THE HISTORY OF JS
-                  const currentText = currentElement.querySelector("text");
-                  const oldText = currentText.innerHTML;
-                  currentText.innerHTML = "a";
-
-                  var currentHeight = currentText.getBoundingClientRect().height
-                  while (currentHeight > 16) {
-                    currentWidth -= 5;
+                  try {
+                    if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
+                      return;
+                    }
+                    let currentWidth = 150;
+                    const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
                     currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
-                    currentHeight = currentText.getBoundingClientRect().height;
-                  }
-                  currentText.innerHTML = oldText;
 
-                  currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
-                  currentElement.parentElement.parentElement.addEventListener("click",function(){
+                    //THE SMARTED/MOST INSANE CODE THAT WORKS IN THE HISTORY OF JS
+                    const currentText = currentElement.querySelector("text");
+                    const oldText = currentText.innerHTML;
+                    currentText.innerHTML = "a";
+
+                    var currentHeight = currentText.getBoundingClientRect().height;
+                    while (currentHeight > 16) {
+                      currentWidth -= 5;
+                      currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                      currentHeight = currentText.getBoundingClientRect().height;
+                    }
+                    while (Math.round(currentHeight) < 16){
+                      currentWidth += 1;
+                      currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                      currentHeight = currentText.getBoundingClientRect().height;
+                    }
+                    currentText.innerHTML = oldText;
+
+                    currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
+                    currentElement.parentElement.parentElement.addEventListener("click", function () {
                       var workspace = Blockly.getMainWorkspace();
                       var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
                       //Blockly.Xml.domToWorkspace(xml, workspace);
                       const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
                       const x = workspace.scrollX || 0;
-                      const y = workspace.scrollY || 0; 
+                      const y = workspace.scrollY || 0;
                       newBlock.moveBy(x, y);
-                  });
-                  currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
+                    });
+                    currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
+                  } catch (e) {
+                    console.log(e);
+                  }
                 }
                 document.getElementById('currentlyBlabberingOnThis').id = '';
               }
@@ -474,7 +486,7 @@ function popupFunctionality() {
             //console.log(streamResult);  // Print or use the response as needed
 
             let instanceCount = 0;
-            var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK{${++instanceCount}}`);
+            var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
             edittedStreamResult = converter.makeHtml(edittedStreamResult);
             //FUTURE REPLACE `````` with code block
             document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p>currently writing a code block</p></div>");
