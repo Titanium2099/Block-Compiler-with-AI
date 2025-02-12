@@ -378,7 +378,9 @@ function popupFunctionality() {
 
           //remove the loading dots
           document.getElementById('AI_is_thinking_what_to_blabber').remove();
-
+          if(document.getElementById("currentlyBlabberingOnThis") != null){ //fixes a glitch
+            document.getElementById("currentlyBlabberingOnThis").remove();
+          }          
           var aiMessage = document.createElement('div');
           aiMessage.className = 'ai-message';
           aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
