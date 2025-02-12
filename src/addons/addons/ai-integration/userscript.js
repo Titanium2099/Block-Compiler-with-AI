@@ -274,7 +274,14 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 
 function popupFunctionality() {
-  converter = new showdown.Converter();
+  function defineShowdown(){
+    if(typeof showdown != "undefined"){
+      converter = new showdown.Converter();
+    }else{
+      setTimeout(defineShowdown,10);
+    }
+  }
+  defineShowdown();
   document.getElementById('removeAttachement').addEventListener('click', () => {
     document.getElementById('attachedFile').remove();
     document.AI_INTEGRATION.currentInputHasAttachment = false;
