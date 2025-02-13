@@ -36,6 +36,16 @@ function currentSpriteName() {
   return document.getElementsByClassName("input_input-form_l9eYg sprite-info_sprite-input_17wjb")[0].value; //hacky way to get the sprite name, should be replaced with a better way
 }
 
+function workspaceVariables() {
+  var workspace = Blockly.getMainWorkspace();
+  var allVariables = workspace.getAllVariables(); // Get all variables
+  var lists = allVariables.filter(variable => variable.type === "list");
+  var listNames = lists.map(list => list.name);
+  var variables = allVariables.filter(variable => variable.type === "");
+  var variableNames = variables.map(variable => variable.name);
+  return [listNames, variableNames];
+}
+
 async function handleRawCodeChunk(codeChunk) {
   let response = {
     "variables": [],
@@ -43,7 +53,9 @@ async function handleRawCodeChunk(codeChunk) {
     "rawXML": codeChunk,
     "BlocksAsXML": "",
     "blocksAsSVG": "",
-    "status": "success"
+    "status": "success",
+    "overlappingVars": [],
+    "overlappingLists": [],
   }
   try {
     codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
@@ -58,14 +70,27 @@ async function handleRawCodeChunk(codeChunk) {
       //delete the list creation request
       xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
     }
+    for (var x of response.variables) if (Blockly.getMainWorkspace().getVariable(x) != null) response.overlappingVars.push(x)
+    for (var x of response.lists) if (Blockly.getMainWorkspace().getVariable(x, "list") != null) response.overlappingLists.push(x)
+
     response.BlocksAsXML = xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "");
     response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML);
-    return response;
   } catch (e) {
     console.error(e);
     response.status = "error";
-    return response;
   }
+  //due to the way that the code is parsed, the variables and lists are added to the workspace and we need to remove them (if they don't overlap)
+  response.variables.forEach(variable => {
+    if (!response.overlappingVars.includes(variable)) {
+      if (Blockly.getMainWorkspace().getVariable(variable) != null) Blockly.getMainWorkspace().deleteVariableById(Blockly.getMainWorkspace().getVariable(variable).getId())
+    }
+  });
+  response.lists.forEach(list => {
+    if (!response.overlappingLists.includes(list)) {
+      if (Blockly.getMainWorkspace().getVariable(list, "list") != null) Blockly.getMainWorkspace().deleteVariableById(Blockly.getMainWorkspace().getVariable(list, "list").getId())
+    }
+  });
+  return response;
 }
 
 
@@ -378,9 +403,9 @@ function popupFunctionality() {
 
           //remove the loading dots
           document.getElementById('AI_is_thinking_what_to_blabber').remove();
-          if(document.getElementById("currentlyBlabberingOnThis") != null){ //fixes a glitch
+          if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
             document.getElementById("currentlyBlabberingOnThis").remove();
-          }          
+          }
           var aiMessage = document.createElement('div');
           aiMessage.className = 'ai-message';
           aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
@@ -438,6 +463,7 @@ function popupFunctionality() {
                 for (let i = 0; i <= instanceCount; i++) {
                   try {
                     if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
+                      console.warn("DEBUG: skipping codeblock #" + instanceCount + " due to status failure", document.AI_INTEGRATION.processedCodeChunks[instanceCount])
                       return;
                     }
                     let currentWidth = 150;
@@ -455,7 +481,7 @@ function popupFunctionality() {
                       currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
                       currentHeight = currentText.getBoundingClientRect().height;
                     }
-                    while (Math.round(currentHeight) < 16){
+                    while (Math.round(currentHeight) < 16) {
                       currentWidth += 1;
                       currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
                       currentHeight = currentText.getBoundingClientRect().height;
@@ -511,7 +537,7 @@ export default async function ({ addon, console }) {
 
   //create new CSS (style for popup)
   const style = document.createElement('style');
-  style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid #3A3B3B; border-radius: 6px; background-color: #111; display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 225px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid #3A3B3B; margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message *:not(svg):not(svg *) {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } }`;
+  style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid #3A3B3B; border-radius: 6px; background-color: #111; display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 337.5px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid #3A3B3B; padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid #3A3B3B; margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message *:not(svg):not(svg *) {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } }`;
   document.head.appendChild(style);
 
   const js = document.createElement('script');
