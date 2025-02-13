@@ -50,7 +50,6 @@ export default class GetSVG {
     return style;
   }
 
-  // Main method to fetch the SVG for a given blockXml
   async getSVG(blockXml) {
     this.blockXml = this.Blockly.Xml.textToDom(blockXml);
 
@@ -59,7 +58,24 @@ export default class GetSVG {
     // Store existing block IDs before adding new blocks
     let existingBlockIds = workspace.getAllBlocks().map(block => block.id);
 
-    let block = this.Blockly.Xml.domToBlock(this.blockXml, workspace);
+
+    var returnedData = "<div>";
+
+    for (const blockXml of Array.from(this.blockXml.children)) {
+      let block = this.Blockly.Xml.domToBlock(blockXml, workspace);
+      returnedData += await this.getSVG_internal(block);
+  }
+    returnedData += "</div>";
+    // Remove only the newly added blocks (keep existing workspace intact)
+    workspace.getAllBlocks().forEach(block => {
+      if (!existingBlockIds.includes(block.id)) {
+        block.dispose(); // Remove only the new block
+      }
+    });
+    return returnedData;
+  }
+  // Main method to fetch the SVG for a given blockXml
+  async getSVG_internal(block) {
 
     // Get the exported SVG
     let svg = this.selectedBlocks(false, block);
@@ -71,13 +87,6 @@ export default class GetSVG {
 
     // Replace external images with data URIs
     await this.replaceExternalImages(svg);
-
-    // Remove only the newly added blocks (keep existing workspace intact)
-    workspace.getAllBlocks().forEach(block => {
-      if (!existingBlockIds.includes(block.id)) {
-        block.dispose(); // Remove only the new block
-      }
-    });
 
     // Export the SVG as a file
     return new XMLSerializer().serializeToString(svg);

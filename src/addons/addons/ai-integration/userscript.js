@@ -73,7 +73,7 @@ async function handleRawCodeChunk(codeChunk) {
     for (var x of response.variables) if (Blockly.getMainWorkspace().getVariable(x) != null) response.overlappingVars.push(x)
     for (var x of response.lists) if (Blockly.getMainWorkspace().getVariable(x, "list") != null) response.overlappingLists.push(x)
 
-    response.BlocksAsXML = xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "");
+    response.BlocksAsXML = "<xml>" + xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "") + "</xml>";
     response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML);
   } catch (e) {
     console.error(e);
@@ -449,13 +449,21 @@ function popupFunctionality() {
                   Div.style.width = '500px';
                   Div.innerHTML = `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
                   document.body.appendChild(Div);
-                  let codeBlockWidth = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBBox().width;
-                  let codeBlockHeight = document.getElementById(`CODEBLOCK${instanceCount}`).children[0].children[1].getBoundingClientRect().height;
+                  var codeBlockWidth = [];
+                  var codeBlockHeight = [];
+                  const theDiv = document.getElementById(`CODEBLOCK${instanceCount}`).children[0];
+                  for (var xx = 0; xx < theDiv.children.length; xx++) {
+                    codeBlockWidth.push(theDiv.children[xx].children[1].getBBox().width);
+                    codeBlockHeight.push(theDiv.children[xx].children[1].getBoundingClientRect().height);
+                  }
                   document.getElementById(`TEMPCODEBLOCK${instanceCount}`).remove();
 
                   let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
                   svg = svg.body.children[0];
-                  svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
+                  for (var i = 0; i < svg.children.length; i++) {
+                    //svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
+                    svg.children[i].setAttribute('viewBox', `0 0 ${codeBlockWidth[i]} ${codeBlockHeight[i]}`);
+                  }
                   return `<div uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
                 });
 
@@ -467,51 +475,64 @@ function popupFunctionality() {
                       return;
                     }
                     let currentWidth = 150;
-                    const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0]
-                    currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                    for (var xx = 0; xx < document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children.length; xx++) {
+                        const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children[xx];
+                        currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
 
-                    //THE SMARTED/MOST INSANE CODE THAT WORKS IN THE HISTORY OF JS
-                    const currentText = currentElement.querySelector("text");
-                    const oldText = currentText.innerHTML;
-                    currentText.innerHTML = "a";
+                        //THE SMARTED/MOST INSANE CODE THAT WORKS IN THE HISTORY OF JS
+                        const currentText = currentElement.querySelector("text");
+                        const oldText = currentText.innerHTML;
+                        currentText.innerHTML = "a";
 
-                    var currentHeight = currentText.getBoundingClientRect().height;
-                    while (currentHeight > 16) {
-                      currentWidth -= 5;
-                      currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
-                      currentHeight = currentText.getBoundingClientRect().height;
-                    }
-                    while (Math.round(currentHeight) < 16) {
-                      currentWidth += 1;
-                      currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
-                      currentHeight = currentText.getBoundingClientRect().height;
-                    }
-                    currentText.innerHTML = oldText;
-
-                    currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
-                    currentElement.parentElement.parentElement.addEventListener("click", function () {
-                      var workspace = Blockly.getMainWorkspace();
-                      var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
-                      //add the variables and lists that don't overlap
-                      var [listNames, variableNames] = workspaceVariables();
-                      for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].variables) {
-                        if (!variableNames.includes(name)) {
-                          Blockly.getMainWorkspace().createVariable(name,"",null);
+                        var currentHeight = currentText.getBoundingClientRect().height;
+                        //console.log(currentText);
+                        while (currentHeight > 16 && currentWidth > 5) {
+                          //console.log("minimizing","currentWidth", currentWidth, "currentHeight", currentHeight);
+                          currentWidth -= 5;
+                          currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                          currentHeight = currentText.getBoundingClientRect().height;
                         }
-                      }
-                      for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].lists) {
-                        if (!listNames.includes(name)) {
-                          Blockly.getMainWorkspace().createVariable(name,"list",null);
+                        while (Math.round(currentHeight) < 16  && currentWidth > 5) {
+                          //console.log("maximizing","currentWidth", currentWidth, "currentHeight", currentHeight);
+                          currentWidth += 1;
+                          currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
+                          currentHeight = currentText.getBoundingClientRect().height;
                         }
+                        currentText.innerHTML = oldText;
                       }
-                      
-                      //Blockly.Xml.domToWorkspace(xml, workspace);
-                      const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
-                      const x = workspace.scrollX || 0;
-                      const y = workspace.scrollY || 0;
-                      newBlock.moveBy(x, y);
-                    });
-                    currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
+                      const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
+                      currentElement.parentElement.parentElement.style = "border: 1px solid #3A3B3B;padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
+                      currentElement.parentElement.parentElement.addEventListener("click", function () {
+                        var workspace = Blockly.getMainWorkspace();
+                        var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
+                        //add the variables and lists that don't overlap
+                        var [listNames, variableNames] = workspaceVariables();
+                        for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].variables) {
+                          if (!variableNames.includes(name)) {
+                            Blockly.getMainWorkspace().createVariable(name, "", null);
+                          }
+                        }
+                        for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].lists) {
+                          if (!listNames.includes(name)) {
+                            Blockly.getMainWorkspace().createVariable(name, "list", null);
+                          }
+                        }
+
+                        var totalWidth = 0;
+                        //Blockly.Xml.domToWorkspace(xml, workspace);
+                        Array.from(xml.children).forEach(block => {
+                          const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
+                          const x = workspace.scrollX + totalWidth || 0;
+                          const y = workspace.scrollY || 0;
+                          newBlock.moveBy(x, y);
+                          totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
+                        });
+                        /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
+                        const x = workspace.scrollX || 0;
+                        const y = workspace.scrollY || 0;
+                        newBlock.moveBy(x, y);*/
+                      });
+                      currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
                   } catch (e) {
                     console.log(e);
                   }
