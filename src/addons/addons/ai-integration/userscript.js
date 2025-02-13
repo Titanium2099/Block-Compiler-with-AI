@@ -492,6 +492,19 @@ function popupFunctionality() {
                     currentElement.parentElement.parentElement.addEventListener("click", function () {
                       var workspace = Blockly.getMainWorkspace();
                       var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
+                      //add the variables and lists that don't overlap
+                      var [listNames, variableNames] = workspaceVariables();
+                      for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].variables) {
+                        if (!variableNames.includes(name)) {
+                          Blockly.getMainWorkspace().createVariable(name,"",null);
+                        }
+                      }
+                      for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].lists) {
+                        if (!listNames.includes(name)) {
+                          Blockly.getMainWorkspace().createVariable(name,"list",null);
+                        }
+                      }
+                      
                       //Blockly.Xml.domToWorkspace(xml, workspace);
                       const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
                       const x = workspace.scrollX || 0;
