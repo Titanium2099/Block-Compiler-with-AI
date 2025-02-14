@@ -60,6 +60,11 @@ async function handleRawCodeChunk(codeChunk) {
   try {
     codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
     let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
+    //check if it successfully parsed
+    if (xmlCode.getElementsByTagName("parsererror").length > 0) {
+      response.status = "error";
+      return response;
+    }
     while (xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
       response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
       //delete the variable creation request
@@ -101,6 +106,37 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   document.AI_INTEGRATION.popupOpen = true;
   document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
   document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
+
+
+  //create new div
+  const attachedFile = fileAttached ? `<div
+          style="border:1px solid #3a3b3b;border-radius:6px;overflow:scroll;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
+          <svg fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg height= 24 width= 24 style= height:16px;color:#87bcde>
+              <path
+                  d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z"
+                  stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path>
+          </svg>
+          <p
+              style='margin:0;margin-right:5px;font-family:"Helvetica Neue",sans-serif;font-size:11px;color:#7b7665'>${fileAttachedText}</p>
+          <svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg class= size-6 stroke= currentColor stroke-width= 1.5 style= height:13px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer>
+              <path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path>
+          </svg>
+      </div>` : '';
+
+
+  if(document.querySelector('.container') != null) {
+    document.querySelector('.container').style.display = '';
+    document.querySelector('.container').style.zIndex = 100000000;
+    //FINISH ADDING SUPPORT TO reopening popup
+    var textareaa = document.getElementById('auto-resizing-textarea');
+    //focus on textarea
+    textareaa.focus();
+  
+    textareaa.value = inputValue;
+    var parsedAttachFile = xmlParser.parseFromString(attachedFile, "text/html");
+    document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
+    return;
+  }
   //create new blob
   const blob = new Blob(["<html lang=en><meta charset=UTF-8><style>@keyframes scaleUpDown{0%,100%{transform:scaleY(1) scaleX(1)}50%,90%{transform:scaleY(1.1)}75%{transform:scaleY(.95)}80%{transform:scaleX(.95)}}@keyframes shake{0%,100%{transform:skewX(0) scale(1)}50%{transform:skewX(5deg) scale(.9)}}@keyframes particleUp{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;top:-100%;transform:scale(.5)}}@keyframes glow{0%,100%{background-color:#ef5a00}50%{background-color:#ff7800}}.fire{width:60px;height:60px;background-color:transparent;margin-left:12px;margin-top:17px;position:absolute}.fire-center{position:absolute;height:100%;width:100%;animation:scaleUpDown 3s ease-out;animation-iteration-count:infinite;animation-fill-mode:both}.fire-center .main-fire{position:absolute;width:100%;height:100%;background-image:radial-gradient(farthest-corner at 10px 0,#d43300 0,#ef5a00 95%);transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-center .particle-fire{position:absolute;top:60%;left:45%;width:2px;height:2px;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right{height:100%;width:100%;position:absolute;animation:shake 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right .main-fire{position:absolute;top:15%;right:-25%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-right .particle-fire{position:absolute;top:45%;left:50%;width:3.0303030303030303px;height:3.0303030303030303px;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left{position:absolute;height:100%;width:100%;animation:shake 3s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left .main-fire{position:absolute;top:15%;left:-20%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-left .particle-fire{position:absolute;top:10%;left:20%;width:10%;height:10%;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 3s infinite ease-out 0;animation-fill-mode:both}.fire-bottom .main-fire{position:absolute;top:30%;left:20%;width:75%;height:75%;background-color:#ff7800;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 100% 40%;filter:blur(10px);animation:glow 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}</style><body style=background-color:#111111><div class=fire style=display:table-footer-group><div class=fire-left><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-center><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-right><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-bottom><div class=main-fire></div></div></div></body></html>"], { type: "text/html" });
   const url = URL.createObjectURL(blob);
@@ -142,20 +178,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     });
     return;
   }
-  //create new div
-  const attachedFile = fileAttached ? `<div
-          style="border:1px solid #3a3b3b;border-radius:6px;overflow:scroll;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
-          <svg fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg height= 24 width= 24 style= height:16px;color:#87bcde>
-              <path
-                  d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z"
-                  stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path>
-          </svg>
-          <p
-              style='margin:0;margin-right:5px;font-family:"Helvetica Neue",sans-serif;font-size:11px;color:#7b7665'>${fileAttachedText}</p>
-          <svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg class= size-6 stroke= currentColor stroke-width= 1.5 style= height:13px;color:#fff;margin-top:auto;margin-bottom:auto;cursor:pointer>
-              <path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path>
-          </svg>
-      </div>` : '';
+
 
   const div = document.createElement('div');
   div.className = 'container';
@@ -259,9 +282,6 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     }
   });
 
-
-
-
   document.addEventListener('mouseup', () => {
     isDragging = false;
     div.style.cursor = "default";
@@ -315,7 +335,8 @@ function popupFunctionality() {
   });
 
   document.getElementById('closePopup').addEventListener('click', () => {
-    document.querySelector('.container').remove();
+    document.querySelector('.container').style.display = 'none';
+    document.querySelector('.container').style.zIndex = -999999;
     document.AI_INTEGRATION.popupOpen = false;
   });
 
