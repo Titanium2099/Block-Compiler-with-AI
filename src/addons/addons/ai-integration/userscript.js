@@ -606,13 +606,53 @@ function popupFunctionality() {
             })
             .catch(error => {
               console.error("Error reading:", error);
-              document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+              document.AI_INTEGRATION.AI_currently_blabbering = false;
+              if (document.getElementById('currentlyBlabberingOnThis') != null) {
+                document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+              } else {
+                document.getElementById('AI_is_thinking_what_to_blabber').remove();
+                if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
+                  document.getElementById("currentlyBlabberingOnThis").remove();
+                }
+                var aiMessage = document.createElement('div');
+                aiMessage.className = 'ai-message';
+                aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+                document.getElementById('chat_content').appendChild(aiMessage);
+              }
             });
         } else {
           console.error('Error:', response.statusText);
+          document.AI_INTEGRATION.AI_currently_blabbering = false;
+          if (document.getElementById('currentlyBlabberingOnThis') != null) {
+            document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+          } else {
+            document.getElementById('AI_is_thinking_what_to_blabber').remove();
+            if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
+              document.getElementById("currentlyBlabberingOnThis").remove();
+            }
+            var aiMessage = document.createElement('div');
+            aiMessage.className = 'ai-message';
+            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+            document.getElementById('chat_content').appendChild(aiMessage);
+          }
         }
       })
-      .catch(error => console.error('Request failed', error));
+      .catch(error => {
+        console.error('Request failed', error);
+        document.AI_INTEGRATION.AI_currently_blabbering = false;
+        if (document.getElementById('currentlyBlabberingOnThis') != null) {
+          document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+        } else {
+          document.getElementById('AI_is_thinking_what_to_blabber').remove();
+          if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
+            document.getElementById("currentlyBlabberingOnThis").remove();
+          }
+          var aiMessage = document.createElement('div');
+          aiMessage.className = 'ai-message';
+          aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+          document.getElementById('chat_content').appendChild(aiMessage);
+        }
+      });
   }
 }
 
