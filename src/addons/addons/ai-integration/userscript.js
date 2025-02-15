@@ -126,14 +126,14 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
       </div>` : '';
 
 
-  if(document.querySelector('.container') != null) {
+  if (document.querySelector('.container') != null) {
     document.querySelector('.container').style.display = '';
     document.querySelector('.container').style.zIndex = 100000000;
     //FINISH ADDING SUPPORT TO reopening popup
     var textareaa = document.getElementById('auto-resizing-textarea');
     //focus on textarea
     textareaa.focus();
-  
+
     textareaa.value = inputValue;
     var parsedAttachFile = xmlParser.parseFromString(attachedFile, "text/html");
     document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
@@ -348,7 +348,7 @@ function popupFunctionality() {
   document.getElementById('clearChat').addEventListener('click', () => {
     //prompt user if they are sure
     if (confirm("Are you sure you want to clear the chat?")) {
-      while(document.getElementById('chat_content').children.length > 1){
+      while (document.getElementById('chat_content').children.length > 1) {
         document.getElementById('chat_content').children[1].remove();
       }
       document.AI_INTEGRATION = originalState;
@@ -448,69 +448,80 @@ function popupFunctionality() {
 
           const domParser = new DOMParser();
           // Stream the response
-          reader.read().then(function processText({ done, value }) {
-            if (done) {
-              document.AI_INTEGRATION.AI_currently_blabbering = false;
-              document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
-              document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
-              document.AI_INTEGRATION.currentInputHasAttachment = false;
+          const TIMEOUT_MS = 5000; // 5 seconds timeout read
+          function readWithTimeout(reader) {
+            return Promise.race([
+              reader.read(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Read operation timed out")), TIMEOUT_MS)
+              ),
+            ]);
+          }
+          readWithTimeout(reader)
+            .then(function processText({ done, value }) {
+              if (done) {
 
-              async function processAndRenderCodeChunks() {
-                var randomId = Math.random().toString(36).substr(2, 5).toUpperCase();
-                document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs) || [];
-                document.AI_INTEGRATION.processedCodeChunks = [];
+                document.AI_INTEGRATION.AI_currently_blabbering = false;
+                document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
+                document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
+                document.AI_INTEGRATION.currentInputHasAttachment = false;
 
-                const processedChunks = await Promise.all(
-                  document.AI_INTEGRATION.CodeChunks.map(chunk => handleRawCodeChunk(chunk))
-                );
+                async function processAndRenderCodeChunks() {
+                  var randomId = Math.random().toString(36).substr(2, 5).toUpperCase();
+                  document.AI_INTEGRATION.CodeChunks = streamResult.match(/```(.*?)```/gs) || [];
+                  document.AI_INTEGRATION.processedCodeChunks = [];
 
-                document.AI_INTEGRATION.processedCodeChunks = processedChunks;
+                  const processedChunks = await Promise.all(
+                    document.AI_INTEGRATION.CodeChunks.map(chunk => handleRawCodeChunk(chunk))
+                  );
 
-                let instanceCount = -1;
-                var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs, "CODECHUNK23407283947");
-                editedStreamResult = converter.makeHtml(editedStreamResult)
-                editedStreamResult = editedStreamResult.replaceAll("CODECHUNK23407283947", () => {
-                  instanceCount++;
-                  if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
-                    return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
-                  }
-                  document.AI_INTEGRATION.AllCodeChunksEverAdded.push(document.AI_INTEGRATION.processedCodeChunks[instanceCount]);
-                  let Div = document.createElement('div');
-                  Div.id = `TEMPCODEBLOCK${instanceCount}`;
-                  Div.style.position = 'absolute';
-                  Div.style.opacity = '0';
-                  Div.style.pointerEvents = 'none';
-                  Div.style.zIndex = '-9999';
-                  Div.style.width = '500px';
-                  Div.innerHTML = `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
-                  document.body.appendChild(Div);
-                  var codeBlockWidth = [];
-                  var codeBlockHeight = [];
-                  const theDiv = document.getElementById(`CODEBLOCK${instanceCount}`).children[0];
-                  for (var xx = 0; xx < theDiv.children.length; xx++) {
-                    codeBlockWidth.push(theDiv.children[xx].children[1].getBBox().width);
-                    codeBlockHeight.push(theDiv.children[xx].children[1].getBoundingClientRect().height);
-                  }
-                  document.getElementById(`TEMPCODEBLOCK${instanceCount}`).remove();
+                  document.AI_INTEGRATION.processedCodeChunks = processedChunks;
 
-                  let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
-                  svg = svg.body.children[0];
-                  for (var i = 0; i < svg.children.length; i++) {
-                    //svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
-                    svg.children[i].setAttribute('viewBox', `0 0 ${codeBlockWidth[i]} ${codeBlockHeight[i]}`);
-                  }
-                  return `<div uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
-                });
-
-                document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
-                for (let i = 0; i <= instanceCount; i++) {
-                  try {
+                  let instanceCount = -1;
+                  var editedStreamResult = streamResult.replaceAll(/```(.*?)```/gs, "CODECHUNK23407283947");
+                  editedStreamResult = converter.makeHtml(editedStreamResult)
+                  editedStreamResult = editedStreamResult.replaceAll("CODECHUNK23407283947", () => {
+                    instanceCount++;
                     if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
-                      console.warn("DEBUG: skipping codeblock #" + instanceCount + " due to status failure", document.AI_INTEGRATION.processedCodeChunks[instanceCount])
-                      return;
+                      return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
                     }
-                    let currentWidth = 150;
-                    for (var xx = 0; xx < document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children.length; xx++) {
+                    document.AI_INTEGRATION.AllCodeChunksEverAdded.push(document.AI_INTEGRATION.processedCodeChunks[instanceCount]);
+                    let Div = document.createElement('div');
+                    Div.id = `TEMPCODEBLOCK${instanceCount}`;
+                    Div.style.position = 'absolute';
+                    Div.style.opacity = '0';
+                    Div.style.pointerEvents = 'none';
+                    Div.style.zIndex = '-9999';
+                    Div.style.width = '500px';
+                    Div.innerHTML = `<div id="CODEBLOCK${instanceCount}">${document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG}</div>`;
+                    document.body.appendChild(Div);
+                    var codeBlockWidth = [];
+                    var codeBlockHeight = [];
+                    const theDiv = document.getElementById(`CODEBLOCK${instanceCount}`).children[0];
+                    for (var xx = 0; xx < theDiv.children.length; xx++) {
+                      codeBlockWidth.push(theDiv.children[xx].children[1].getBBox().width);
+                      codeBlockHeight.push(theDiv.children[xx].children[1].getBoundingClientRect().height);
+                    }
+                    document.getElementById(`TEMPCODEBLOCK${instanceCount}`).remove();
+
+                    let svg = domParser.parseFromString(document.AI_INTEGRATION.processedCodeChunks[instanceCount].blocksAsSVG, "text/html");
+                    svg = svg.body.children[0];
+                    for (var i = 0; i < svg.children.length; i++) {
+                      //svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
+                      svg.children[i].setAttribute('viewBox', `0 0 ${codeBlockWidth[i]} ${codeBlockHeight[i]}`);
+                    }
+                    return `<div uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
+                  });
+
+                  document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
+                  for (let i = 0; i <= instanceCount; i++) {
+                    try {
+                      if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
+                        console.warn("DEBUG: skipping codeblock #" + instanceCount + " due to status failure", document.AI_INTEGRATION.processedCodeChunks[instanceCount])
+                        return;
+                      }
+                      let currentWidth = 150;
+                      for (var xx = 0; xx < document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children.length; xx++) {
                         const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children[xx];
                         currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
 
@@ -527,7 +538,7 @@ function popupFunctionality() {
                           currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
                           currentHeight = currentText.getBoundingClientRect().height;
                         }
-                        while (Math.round(currentHeight) < 16  && currentWidth > 5) {
+                        while (Math.round(currentHeight) < 16 && currentWidth > 5) {
                           //console.log("maximizing","currentWidth", currentWidth, "currentHeight", currentHeight);
                           currentWidth += 1;
                           currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
@@ -568,30 +579,35 @@ function popupFunctionality() {
                         newBlock.moveBy(x, y);*/
                       });
                       currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
-                  } catch (e) {
-                    console.log(e);
+                    } catch (e) {
+                      console.log(e);
+                    }
                   }
+                  document.getElementById('currentlyBlabberingOnThis').id = '';
                 }
-                document.getElementById('currentlyBlabberingOnThis').id = '';
-              }
-              processAndRenderCodeChunks();
-              //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
-              return;
-            };
-            // Decode the chunk and append to the stream result
-            streamResult += decoder.decode(value, { stream: true });
-            //console.log(streamResult);  // Print or use the response as needed
+                processAndRenderCodeChunks();
+                //edittedStreamResult = edittedStreamResult.replace(/CODEBLOCK{(.*?)}/gs, (match, p1) => `<div>CHANGE THIS IN FUTURE</div>`);
+                return;
 
-            let instanceCount = 0;
-            var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
-            edittedStreamResult =  edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
-            edittedStreamResult = converter.makeHtml(edittedStreamResult);
-            //FUTURE REPLACE `````` with code block
-            document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
-            //document.getElementById('currentlyBlabberingOnThis').innerText = streamResult;
-            document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
-            reader.read().then(processText);
-          });
+              }
+              // Decode the chunk and append to the stream result
+              streamResult += decoder.decode(value, { stream: true });
+              //console.log(streamResult);  // Print or use the response as needed
+
+              let instanceCount = 0;
+              var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
+              edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
+              edittedStreamResult = converter.makeHtml(edittedStreamResult);
+              //FUTURE REPLACE `````` with code block
+              document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
+              //document.getElementById('currentlyBlabberingOnThis').innerText = streamResult;
+              document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+              reader.read().then(processText);
+            })
+            .catch(error => {
+              console.error("Error reading:", error);
+              document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+            });
         } else {
           console.error('Error:', response.statusText);
         }
