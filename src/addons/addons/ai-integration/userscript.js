@@ -11,6 +11,7 @@ const resistanceThreshold = 10;
 const xmlParser = new DOMParser();
 const xmlSerializer = new XMLSerializer();
 const blockParser = new GetSVG();
+const mainWorkspace = Blockly.getMainWorkspace();
 
 document.AI_INTEGRATION = {
   AI_currently_blabbering: false,
@@ -39,7 +40,7 @@ function currentSpriteName() {
 }
 
 function workspaceVariables() {
-  var workspace = Blockly.getMainWorkspace();
+  var workspace = mainWorkspace;
   var allVariables = workspace.getAllVariables(); // Get all variables
   var lists = allVariables.filter(variable => variable.type === "list");
   var listNames = lists.map(list => list.name);
@@ -77,8 +78,8 @@ async function handleRawCodeChunk(codeChunk) {
       //delete the list creation request
       xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
     }
-    for (var x of response.variables) if (Blockly.getMainWorkspace().getVariable(x) != null) response.overlappingVars.push(x)
-    for (var x of response.lists) if (Blockly.getMainWorkspace().getVariable(x, "list") != null) response.overlappingLists.push(x)
+    for (var x of response.variables) if (mainWorkspace.getVariable(x) != null) response.overlappingVars.push(x)
+    for (var x of response.lists) if (mainWorkspace.getVariable(x, "list") != null) response.overlappingLists.push(x)
 
     response.BlocksAsXML = "<xml>" + xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "") + "</xml>";
     response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML);
@@ -89,12 +90,12 @@ async function handleRawCodeChunk(codeChunk) {
   //due to the way that the code is parsed, the variables and lists are added to the workspace and we need to remove them (if they don't overlap)
   response.variables.forEach(variable => {
     if (!response.overlappingVars.includes(variable)) {
-      if (Blockly.getMainWorkspace().getVariable(variable) != null) Blockly.getMainWorkspace().deleteVariableById(Blockly.getMainWorkspace().getVariable(variable).getId())
+      if (mainWorkspace.getVariable(variable) != null) mainWorkspace.deleteVariableById(mainWorkspace.getVariable(variable).getId())
     }
   });
   response.lists.forEach(list => {
     if (!response.overlappingLists.includes(list)) {
-      if (Blockly.getMainWorkspace().getVariable(list, "list") != null) Blockly.getMainWorkspace().deleteVariableById(Blockly.getMainWorkspace().getVariable(list, "list").getId())
+      if (mainWorkspace.getVariable(list, "list") != null) mainWorkspace.deleteVariableById(mainWorkspace.getVariable(list, "list").getId())
     }
   });
   return response;
@@ -548,18 +549,18 @@ function popupFunctionality() {
                       const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
                       currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
                       currentElement.parentElement.parentElement.addEventListener("click", function () {
-                        var workspace = Blockly.getMainWorkspace();
+                        var workspace = mainWorkspace;
                         var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
                         //add the variables and lists that don't overlap
                         var [listNames, variableNames] = workspaceVariables();
                         for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].variables) {
                           if (!variableNames.includes(name)) {
-                            Blockly.getMainWorkspace().createVariable(name, "", null);
+                            mainWorkspace.createVariable(name, "", null);
                           }
                         }
                         for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].lists) {
                           if (!listNames.includes(name)) {
-                            Blockly.getMainWorkspace().createVariable(name, "list", null);
+                            mainWorkspace.createVariable(name, "list", null);
                           }
                         }
 
@@ -672,7 +673,7 @@ export default async function ({ addon, console }) {
   if (authToken === "") {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
-      document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+      document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
       createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
     });
     return;
@@ -684,7 +685,7 @@ export default async function ({ addon, console }) {
         text: "Explain this Sprite",
         callback: () => {
           console.log("Explain this Sprite");
-          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
           createBasePopup(true, currentSpriteName() + " - Entire Sprite", "Explain this Sprite:");
         },
         separator: true,
@@ -743,7 +744,7 @@ export default async function ({ addon, console }) {
   );
 
   window.addEventListener('ai-button-clicked', function () {
-    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
     createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
   });
 }
