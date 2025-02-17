@@ -50,7 +50,7 @@ export default class GetSVG {
     return style;
   }
 
-  async getSVG(blockXml) {
+  async getSVG(blockXml,uniqueCommentID) {
     this.blockXml = this.Blockly.Xml.textToDom(blockXml);
 
     let workspace = this.Blockly.getMainWorkspace(); // Get the existing workspace
@@ -59,10 +59,10 @@ export default class GetSVG {
     let existingBlockIds = workspace.getAllBlocks().map(block => block.id);
 
 
-    var returnedData = "<div>";
+    var returnedData = "<div style=\"display: flex;flex-direction: column;\">";
 
     for (const blockXml of Array.from(this.blockXml.children)) {
-      let block = this.Blockly.Xml.domToBlock(blockXml, workspace);
+      let block = this.Blockly.Xml.domToBlock(blockXml, workspace,uniqueCommentID);
       returnedData += await this.getSVG_internal(block);
   }
     returnedData += "</div>";
