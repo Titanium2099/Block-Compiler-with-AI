@@ -120,7 +120,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
   //create new div
   const attachedFile = fileAttached ? `<div
-          style="border:1px solid var(--ui-tertiary);border-radius:6px;overflow:scroll;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
+          style="border:1px solid var(--ui-tertiary);border-radius:6px;overflow:auto;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
           <svg fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg height= 24 width= 24 style= height:16px;color:#87bcde>
               <path
                   d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z"
@@ -388,7 +388,7 @@ function popupFunctionality() {
                 <div class="message">
                     <span>${input.value}</span>
                     <span>
-                        <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: scroll; display: flex; margin-top: 10px;padding: 5px;">
+                        <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: auto; display: flex; margin-top: 10px;padding: 5px;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 16px;color: #87BCDE;">
                                 <path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentcolor"></path>
                             </svg>
@@ -559,7 +559,7 @@ function popupFunctionality() {
                           currentText.innerHTML = oldText;
                         }
                         const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
-                        currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: scroll;";
+                        currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: auto;";
                         currentElement.parentElement.parentElement.addEventListener("click", function () {
                           if (this.getAttribute("allowRender") == "false") {
                             return;
@@ -631,7 +631,7 @@ function popupFunctionality() {
                               <div class="message">
                                 <span>Attempting to repair code block</span>
                                   <span>
-                                      <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: scroll; display: flex; margin-top: 10px;padding: 5px;">
+                                      <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: auto; display: flex; margin-top: 10px;padding: 5px;">
                                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 16px;color: #87BCDE;">
                                               <path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentcolor"></path>
                                           </svg>
