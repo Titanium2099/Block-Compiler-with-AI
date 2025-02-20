@@ -119,22 +119,10 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 
   //create new div
-  const attachedFile = fileAttached ? `<div
-          style="border:1px solid var(--ui-tertiary);border-radius:6px;overflow:auto;display:flex;margin-top:10px;padding:5px;width:fit-content" id="attachedFile">
-          <svg fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg height= 24 width= 24 style= height:16px;color:#87bcde>
-              <path
-                  d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z"
-                  stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path>
-          </svg>
-          <p
-              style='margin:0;margin-right:5px;font-family:"Helvetica Neue",sans-serif;font-size:11px;color:#7b7665'>${fileAttachedText}</p>
-          <svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns= http:// www.w3.org/ 2000/ svg class= size-6 stroke= currentColor stroke-width= 1.5 style= height:13px;color:var(--text-primary);margin-top:auto;margin-bottom:auto;cursor:pointer>
-              <path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path>
-          </svg>
-      </div>` : '';
+  const attachedFile = fileAttached ? `<div class="attachedFile" id="attachedFile"><svg fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg height=24 width=24 class="svg"><path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path></svg><p class="texta">${fileAttachedText}</p><svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg stroke=currentColor stroke-width=1.5 class=svg2><path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path></svg></div>` : '';
 
 
-  if (document.querySelector('.container') != null) {
+  if (document.querySelector('.container') != null) { //reopen the popup
     document.querySelector('.container').style.display = '';
     document.querySelector('.container').style.zIndex = 100000000;
     //FINISH ADDING SUPPORT TO reopening popup
@@ -171,15 +159,15 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
     div.style.left = `${newLeft}px`;
     div.style.top = `${newTop}px`;
-    div.innerHTML = `<div class="content" id="chat_content" style="display: flex;flex-direction: column;">
-      <div style="padding: 5px;display: flex;"><svg fill="none" viewBox="0 0 24 24" xmlns="http://" www.w3.org="" 2000="" svg="" class="size-6" stroke="currentColor" stroke-width="1.5" style="height:19px;color:var(--text-primary);margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: auto;" id="closePopup">
+    div.innerHTML = `<div class="content no_api_key" id="chat_content">
+      <div class="a"><svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="size-6" stroke="currentColor" stroke-width="1.5" id="closePopup">
                 <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
-  </div><div style="display:flex;flex-direction:column;margin:auto;">
-          <div style="width:79px;height:79px;margin-left:auto;margin-right:auto;margin-bottom:5px">
+  </div><div class="b">
+          <div class="c">
              ${FireAnimation}
           </div>
-          <p style="text-align:center;color:#7c7766;font-weight:900;z-index:10;user-select:none;pointer-events:none;width: 300px;margin-left: auto;margin-right: auto;">To use Torchy, please add your API key in the addons page</p></div>
+          <p class="d">To use Torchy, please add your API key in the addons page</p></div>
   </div>`;
     document.body.appendChild(div);
     document.getElementById('closePopup').addEventListener('click', () => {
@@ -210,30 +198,30 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   div.style.left = `${newLeft}px`;
   div.style.top = `${newTop}px`;
   div.innerHTML = `
-  <div style="padding: 5px;display: flex;">
-  <svg id="clearChat" style="height:19px;color:var(--text-primary);margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: auto;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <div class="headerT">
+  <svg id="clearChat" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
   <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
 </svg>
-  <svg fill="none" viewBox="0 0 24 24" xmlns="http://" www.w3.org="" 2000="" svg="" class="size-6" stroke="currentColor" stroke-width="1.5" style="height:19px;color:var(--text-primary);margin-top:auto;margin-bottom:auto;cursor:pointer;margin-left: 10px;" id="closePopup">
+  <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="size-6" stroke="currentColor" stroke-width="1.5"  id="closePopup">
                 <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
   </div>
   <div class= content id= chat_content>
-      <div style= display:flex;flex-direction:column;margin-top:10px>
-          <div style= width:79px;height:79px;margin-left:auto;margin-right:auto;margin-bottom:5px>
+      <div class=Popup_Header>
+          <div class=a>
              ${FireAnimation}
           </div>
-          <p style= text-align:center;color:#7c7766;font-weight:900;z-index:10;user-select:none;pointer-events:none>Hi I'm Torchy, How can I help you today?
+          <p class=b>Hi I'm Torchy, How can I help you today?
       </div>
   </div>
-  <div style= min-height:fit-content;flex-direction:column class= input-container id= chat_box>
-      <div style= width:100%;display:flex>
-          <textarea class= input-field id= auto-resizing-textarea placeholder="Ask me anything..." style= resize:none;min-height:20px;height:20px;top:2px></textarea>
+  <div class=input-container id= chat_box>
+      <div class=input-parent>
+          <textarea class=input-field id=auto-resizing-textarea placeholder="Ask me anything..."></textarea>
           <svg fill= none viewBox="0 0 17 17" xmlns= http:// www.w3.org/ 2000/ id=submitChat svg class= send-icon height= 17 width= 17>
               <g clip-path= url(#clip0_147_21)>
                   <path
                       d="M2.92172 9.30564L1.08789 3.34619C5.47463 4.62202 9.61134 6.63746 13.3197 9.30564C9.61155 11.9738 5.47507 13.9892 1.08856 15.2651L2.92172 9.30564ZM2.92172 9.30564H7.95788"
-                      stroke-linecap= round stroke-linejoin= round stroke= #7C7766 stroke-width= 1.5></path>
+                      stroke-linecap= round stroke-linejoin= round stroke=#7C7766 stroke-width= 1.5></path>
               </g>
               <defs>
                   <clipPath id= clip0_147_21>
@@ -391,11 +379,11 @@ function popupFunctionality() {
                 <div class="message">
                     <span>${input.value}</span>
                     <span>
-                        <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: auto; display: flex; margin-top: 10px;padding: 5px;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 16px;color: #87BCDE;">
+                        <div class="FileAttachment">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg">
                                 <path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentcolor"></path>
                             </svg>
-                            <p style="margin: 0px;margin-right: 5px;font-size: 11px;">${document.AI_INTEGRATION.attachmentDetails.attachmentText}</p>
+                            <p class="p">${document.AI_INTEGRATION.attachmentDetails.attachmentText}</p>
 
                         </div>
                     </span>
@@ -422,7 +410,7 @@ function popupFunctionality() {
       loadingDots.id = "AI_is_thinking_what_to_blabber";
       loadingDots.innerHTML = `
                 <div class="message" style="width: 22px;">
-                    <div class="dot-elastic" style="margin-left: auto;margin-right: auto;"></div>
+                    <div class="dot-elastic"></div>
                 </div>
             `;
       document.getElementById('chat_content').appendChild(loadingDots);
@@ -509,7 +497,7 @@ function popupFunctionality() {
                     editedStreamResult = editedStreamResult.replaceAll("CODECHUNK23407283947", () => {
                       instanceCount++;
                       if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
-                        return "<h1 style=\"color: #d0402e;\">failed to parse Code Chunk</h1><br>"
+                        return "<h1 class=\"errorMessage\">failed to parse Code Chunk</h1><br>"
                       }
                       document.AI_INTEGRATION.AllCodeChunksEverAdded.push(document.AI_INTEGRATION.processedCodeChunks[instanceCount]);
                       let Div = document.createElement('div');
@@ -536,7 +524,7 @@ function popupFunctionality() {
                         //svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
                         svg.children[i].setAttribute('viewBox', `0 0 ${codeBlockWidth[i]} ${codeBlockHeight[i]}`);
                       }
-                      return `<div uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
+                      return `<div class="codeChunkOverlay" uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
                     });
 
                     document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
@@ -573,7 +561,7 @@ function popupFunctionality() {
                           currentText.innerHTML = oldText;
                         }
                         const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
-                        currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: auto;";
+                        //currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: auto;";
                         currentElement.parentElement.parentElement.addEventListener("click", function () {
                           if (this.getAttribute("allowRender") == "false") {
                             return;
@@ -645,11 +633,11 @@ function popupFunctionality() {
                               <div class="message">
                                 <span>Attempting to repair code block</span>
                                   <span>
-                                      <div style="border: 1px solid var(--ui-tertiary);   border-radius: 6px; overflow: auto; display: flex; margin-top: 10px;padding: 5px;">
-                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 16px;color: #87BCDE;">
+                                      <div class="FileAttachment">
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg">
                                               <path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentcolor"></path>
                                           </svg>
-                                          <p style="margin: 0px;margin-right: 5px;font-size: 11px;">Error Logs</p>
+                                          <p class="p">Error Logs</p>
                                       </div>
                                   </span>
                               </div>    
@@ -676,32 +664,30 @@ function popupFunctionality() {
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
 
-                let instanceCount = 0;
-                if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
-                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"animated-text\">currently writing a code block</p></div>")) {
-                    reader.read().then(processText);
-                  } else {
-                    var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
-                    edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
-                    edittedStreamResult = converter.makeHtml(edittedStreamResult);
-                    document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
-                    document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
-                    reader.read().then(processText);
-                  }
-                } else {
-                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
+                function updateMessageContents(){
+                    var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
                   edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
                   document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
                   reader.read().then(processText);
                 }
+                let instanceCount = 0;
+                if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
+                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"animated-text\">currently writing a code block</p></div>")) {
+                    reader.read().then(processText);
+                  } else {
+                    updateMessageContents()
+                  }
+                } else {
+                  updateMessageContents()
+                }
               })
               .catch(error => {
                 console.error("Error reading:", error);
                 document.AI_INTEGRATION.AI_currently_blabbering = false;
                 if (document.getElementById('currentlyBlabberingOnThis') != null) {
-                  document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+                  document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
                 } else {
                   document.getElementById('AI_is_thinking_what_to_blabber').remove();
                   if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -709,7 +695,7 @@ function popupFunctionality() {
                   }
                   var aiMessage = document.createElement('div');
                   aiMessage.className = 'ai-message';
-                  aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+                  aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
                   document.getElementById('chat_content').appendChild(aiMessage);
                 }
               });
@@ -717,7 +703,7 @@ function popupFunctionality() {
             console.error('Error:', response.statusText);
             document.AI_INTEGRATION.AI_currently_blabbering = false;
             if (document.getElementById('currentlyBlabberingOnThis') != null) {
-              document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+              document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
             } else {
               document.getElementById('AI_is_thinking_what_to_blabber').remove();
               if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -725,7 +711,7 @@ function popupFunctionality() {
               }
               var aiMessage = document.createElement('div');
               aiMessage.className = 'ai-message';
-              aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+              aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
               document.getElementById('chat_content').appendChild(aiMessage);
             }
           }
@@ -734,7 +720,7 @@ function popupFunctionality() {
           console.error('Request failed', error);
           document.AI_INTEGRATION.AI_currently_blabbering = false;
           if (document.getElementById('currentlyBlabberingOnThis') != null) {
-            document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 style=\"color: #d0402e;\">Error reading response</h1>";
+            document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
           } else {
             document.getElementById('AI_is_thinking_what_to_blabber').remove();
             if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -742,7 +728,7 @@ function popupFunctionality() {
             }
             var aiMessage = document.createElement('div');
             aiMessage.className = 'ai-message';
-            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" style=\"color: #d0402e;\">Error reading response</p>`;
+            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
             document.getElementById('chat_content').appendChild(aiMessage);
           }
         });
@@ -758,8 +744,9 @@ export default async function ({ addon, console }) {
   authToken = addon.settings.get("GeminiAPIKey");
 
   //create new CSS (style for popup)
-  const style = document.createElement('style');
-  style.innerHTML = `* { font-family: "Helvetica Neue", sans-serif; } .container { width: 450px; height: 300px; border: 1px solid var(--ui-tertiary); border-radius: 6px; background-color: var(--ui-primary); display: flex; flex-direction: column; } .content { height: 100%; overflow-y: auto; } .ai-message { max-width: 337.5px; font-size: 11px; margin-top: 10px; width: fit-content; /*min-width: 110px;*/ } .ai-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid var(--ui-tertiary); padding: 10px; margin: 0px; margin-left: 10px; border-radius: 10px; font-size: 11px; } .user-message { font-size: 11px; display: flex; max-width: 100%; margin-top: 10px; } .user-message .message { color: #7C7766; font-family: "Helvetica Neue", sans-serif; border: 1px solid var(--ui-tertiary); padding: 10px; border-radius: 10px; margin: 0px; margin-left: auto; margin-right: 10px; max-width: 250px; font-size: 11px; /*min-width: 78px;*/ } .input-container { min-height: 20px; border: 1px solid var(--ui-tertiary); margin: 10px; border-radius: 6px; display: flex; padding: 7.5px; } .ai-message .message *:not(svg):not(svg *) {font-size:11px; } .ai .message h1 {font-size:14px;} .input-field { height: 100%; background-color: transparent; border: none; color: #7C7766; margin-left: 8px; font-size: 11px; width: 100%; font-weight: 500; font-family: "Helvetica Neue", sans-serif; outline: none; margin-top: 0px; margin-bottom: 0px; padding: 0px; margin-right: 11px; max-height: 157px; position: relative; top: 2px; } .send-icon { cursor: pointer; } .dot-elastic { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic 1s infinite linear; } .dot-elastic::before, .dot-elastic::after { content: ""; display: inline-block; position: absolute; top: 0; } .dot-elastic::before { left: -10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-before 1s infinite linear; } .dot-elastic::after { left: 10px; width: 6px; height: 6px; border-radius: 5px; background-color: #7C7766; color: #7C7766; animation: dot-elastic-after 1s infinite linear; } @keyframes dot-elastic-before { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1.5); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 1.5); } 75% { transform: scale(1, 1); } 100% { transform: scale(1, 1); } } @keyframes dot-elastic-after { 0% { transform: scale(1, 1); } 25% { transform: scale(1, 1); } 50% { transform: scale(1, 0.67); } 75% { transform: scale(1, 1.5); } 100% { transform: scale(1, 1); } } .animated-text{background:linear-gradient(to right,var(--ui-tertiary) 20%,#635f52 40%,#635f52 60%,#393a3a 80%);background-size:200% auto;color:#000;background-clip:text;text-fill-color:transparent;-webkit-background-clip:text;-webkit-text-fill-color:transparent;-webkit-animation:2s linear infinite shine;animation:2s linear infinite shine}@-webkit-keyframes shine{to{background-position:200% center}}@keyframes shine{to{background-position:200% center}}`;
+  const style = document.createElement('link');
+  style.setAttribute('rel', 'stylesheet');
+  style.setAttribute('href', 'http://127.0.0.1:5000/main.css');
   document.head.appendChild(style);
 
   const js = document.createElement('script');
