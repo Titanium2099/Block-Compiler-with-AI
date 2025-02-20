@@ -380,6 +380,9 @@ function popupFunctionality() {
     document.AI_INTEGRATION.AI_currently_blabbering = true;
     const input = document.getElementById('auto-resizing-textarea');
 
+    if (input.value.trim() == "") {
+      return;
+    }
     if (document.AI_INTEGRATION.currentInputHasAttachment) {
       document.getElementById('attachedFile').remove();
       var userMessage = document.createElement('div');
@@ -432,13 +435,24 @@ function popupFunctionality() {
         message: messageContents,
         history: document.AI_INTEGRATION.chatHistory,
       };
-      fetch(apiUrl, {
+      function fetchWithTimeout(url, options = {}, timeout = 5000) {
+        const controller = new AbortController();
+        const signal = controller.signal;
+        const fetchPromise = fetch(url, { ...options, signal });
+
+        // Set timeout to abort fetch
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        return fetchPromise
+          .finally(() => clearTimeout(timeoutId));
+      }
+      fetchWithTimeout(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-      })
+      }, 15000)
         .then(response => {
           if (response.ok) {
             const reader = response.body.getReader();
@@ -661,17 +675,27 @@ function popupFunctionality() {
                 }
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
-                //console.log(streamResult);  // Print or use the response as needed
 
                 let instanceCount = 0;
-                var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
-                edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
-                edittedStreamResult = converter.makeHtml(edittedStreamResult);
-                //FUTURE REPLACE `````` with code block
-                document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
-                //document.getElementById('currentlyBlabberingOnThis').innerText = streamResult;
-                document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
-                reader.read().then(processText);
+                if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
+                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"animated-text\">currently writing a code block</p></div>")) {
+                    reader.read().then(processText);
+                  } else {
+                    var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
+                    edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
+                    edittedStreamResult = converter.makeHtml(edittedStreamResult);
+                    document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
+                    document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+                    reader.read().then(processText);
+                  }
+                } else {
+                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `CODEBLOCK #${++instanceCount}`);
+                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
+                  edittedStreamResult = converter.makeHtml(edittedStreamResult);
+                  document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
+                  document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
+                  reader.read().then(processText);
+                }
               })
               .catch(error => {
                 console.error("Error reading:", error);
