@@ -18,7 +18,7 @@ window.addEventListener('blockError', (event) => {
   document.AI_INTEGRATION.errorsDetected.push(event.detail);
 });
 
-document.AI_INTEGRATION = {
+document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it just make debugging alot easier (will do it properly later)
   AI_currently_blabbering: false,
   currentInputHasAttachment: false,
   attachmentDetails: {
@@ -434,7 +434,7 @@ function popupFunctionality() {
         return fetchPromise
           .finally(() => clearTimeout(timeoutId));
       }
-      fetchWithTimeout(apiUrl+"/chat", {
+      fetchWithTimeout(apiUrl + "/chat", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -563,37 +563,88 @@ function popupFunctionality() {
                         const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
                         //currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: auto;";
                         currentElement.parentElement.parentElement.parentElement.children[0].children[0].addEventListener("click", function () {
-                          /*if (this.getAttribute("allowRender") == "false") {
-                            return;
-                          }*/
-                          var workspace = mainWorkspace;
-                          var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].BlocksAsXML);
-                          //add the variables and lists that don't overlap
-                          var [listNames, variableNames] = workspaceVariables();
-                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].variables) {
-                            if (!variableNames.includes(name)) {
-                              mainWorkspace.createVariable(name, "", null);
+                          const element = this;
+                          function callback() {
+                            /*if (this.getAttribute("allowRender") == "false") {
+                              return;
+                            }*/
+                            var workspace = mainWorkspace;
+                            var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
+                            //add the variables and lists that don't overlap
+                            var [listNames, variableNames] = workspaceVariables();
+                            for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
+                              if (!variableNames.includes(name)) {
+                                mainWorkspace.createVariable(name, "", null);
+                              }
                             }
-                          }
-                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].lists) {
-                            if (!listNames.includes(name)) {
-                              mainWorkspace.createVariable(name, "list", null);
+                            for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].lists) {
+                              if (!listNames.includes(name)) {
+                                mainWorkspace.createVariable(name, "list", null);
+                              }
                             }
-                          }
 
-                          var totalWidth = 0;
-                          //Blockly.Xml.domToWorkspace(xml, workspace);
-                          Array.from(xml.children).forEach(block => {
-                            const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
-                            const x = workspace.scrollX + totalWidth || 0;
+                            var totalWidth = 0;
+                            //Blockly.Xml.domToWorkspace(xml, workspace);
+                            Array.from(xml.children).forEach(block => {
+                              const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
+                              const x = workspace.scrollX + totalWidth || 0;
+                              const y = workspace.scrollY || 0;
+                              newBlock.moveBy(x, y);
+                              totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
+                            });
+                            /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
+                            const x = workspace.scrollX || 0;
                             const y = workspace.scrollY || 0;
-                            newBlock.moveBy(x, y);
-                            totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
-                          });
-                          /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
-                          const x = workspace.scrollX || 0;
-                          const y = workspace.scrollY || 0;
-                          newBlock.moveBy(x, y);*/
+                            newBlock.moveBy(x, y);*/
+                          }
+                          var message = `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`;
+                          /* example body message:
+                          <div class="prompt_label_tWjYZ box_box_2jjDp"><p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p>
+<p>Create 2 new variables: XXX, YYY</p>
+<p>Create 2 new lists: XXX, YYY</p>
+<p>Use the 2 existing variables: XXX,YYY</p>
+<p>Use the 2 existing lists: XXX,YYY</p>
+<p>Create the new custom block "XXX"</p>
+*/
+                          var [listNames, variableNames] = workspaceVariables();
+                          var newVariables = [];
+                          var newLists = [];
+                          var existingVariables = [];
+                          var existingLists = [];
+                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
+                            if (!variableNames.includes(name)) {
+                              newVariables.push(name);
+                            } else {
+                              existingVariables.push(name);
+                            }
+                          }
+                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].lists) {
+                            if (!listNames.includes(name)) {
+                              newLists.push(name);
+                            } else {
+                              existingLists.push(name);
+                            }
+                          }
+                          if (newVariables.length > 0) {
+                            message += `<li>Create ${newVariables.length} new ${newVariables.length == 1 ? "variable" : "variables"}: ${newVariables.join(", ")}</li>`;
+                          }
+                          if (newLists.length > 0) {
+                            message += `<li>Create ${newLists.length} new ${newLists.length == 1 ? "list" : "lists"}: ${newLists.join(", ")}</li>`;
+                          }
+                          if (existingVariables.length > 0) {
+                            message += `<li>Use ${existingVariables.length} existing ${existingVariables.length == 1 ? "variable" : "variables"}: ${existingVariables.join(", ")}</li>`;
+                          }
+                          if (existingLists.length > 0) {
+                            message += `<li>Use ${existingLists.length} existing ${existingLists.length == 1 ? "list" : "lists"}: ${existingLists.join(", ")}</li>`;
+                          }
+                          
+                          if (message === `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`) {
+                            message = `<p>This code does not create/use any variables or lists.</p>`;
+                          } else {
+                            message += `</ul>`;
+                          }
+                          const title = "Add Code to Workspace?";
+                          ScratchBlocks.prompt(message, null, callback, title, ScratchBlocks.BROADCAST_MESSAGE_VARIABLE_TYPE, true);
                         });
 
                         var errorForChunk = [];
@@ -666,8 +717,8 @@ function popupFunctionality() {
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
 
-                function updateMessageContents(){
-                    var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
+                function updateMessageContents() {
+                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
                   edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
@@ -748,7 +799,7 @@ export default async function ({ addon, console }) {
   //create new CSS (style for popup)
   const style = document.createElement('link');
   style.setAttribute('rel', 'stylesheet');
-  style.setAttribute('href', apiUrl+'/main.css');
+  style.setAttribute('href', apiUrl + '/main.css');
   document.head.appendChild(style);
 
   const js = document.createElement('script');

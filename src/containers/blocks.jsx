@@ -589,8 +589,8 @@ class Blocks extends React.Component {
     setBlocks (blocks) {
         this.blocks = blocks;
     }
-    handlePromptStart (message, defaultValue, callback, optTitle, optVarType,noInput=false) {
-        const p = {prompt: {callback, message, defaultValue: ''}}; // Set defaultValue to empty string or null
+    handlePromptStart (message, defaultValue = "", callback, optTitle, optVarType,noInput=false) {
+        const p = {prompt: {callback, message, defaultValue: defaultValue}}; // Set defaultValue to empty string or null
         p.prompt.title = optTitle ? optTitle :
             this.ScratchBlocks.Msg.VARIABLE_MODAL_TITLE;
         p.prompt.varType = typeof optVarType === 'string' ?
