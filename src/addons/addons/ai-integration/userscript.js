@@ -3,7 +3,7 @@
 import GetSVG from "./parser.js";
 
 
-const apiUrl = "http://127.0.0.1:5000/chat";
+const apiUrl = "http://127.0.0.1:5000";
 let authToken;
 var converter;
 const resistanceThreshold = 10;
@@ -434,7 +434,7 @@ function popupFunctionality() {
         return fetchPromise
           .finally(() => clearTimeout(timeoutId));
       }
-      fetchWithTimeout(apiUrl, {
+      fetchWithTimeout(apiUrl+"/chat", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -524,7 +524,7 @@ function popupFunctionality() {
                         //svg.setAttribute('viewBox', `0 0 ${codeBlockWidth} ${codeBlockHeight}`);
                         svg.children[i].setAttribute('viewBox', `0 0 ${codeBlockWidth[i]} ${codeBlockHeight[i]}`);
                       }
-                      return `<div class="codeChunkOverlay" uniqueID="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div>`;
+                      return `<div class="codeChunkOverlay"><div class="insert_button_parent"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 insert_button" uniqueid="${document.AI_INTEGRATION.AllCodeChunksEverAdded.length}"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"></path></svg></div><div class="codeChunkOverlay_child"><div id="CODEBLOCK_${randomId}_${instanceCount}">${svg.outerHTML}</div></div></div>`;
                     });
 
                     document.getElementById('currentlyBlabberingOnThis').innerHTML = editedStreamResult;
@@ -562,20 +562,20 @@ function popupFunctionality() {
                         }
                         const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0];
                         //currentElement.parentElement.parentElement.style = "border: 1px solid var(--ui-tertiary);padding: 5px;padding-top: 10px;margin-bottom: 5px;margin-top: 5px;border-radius: 6px;overflow: auto;";
-                        currentElement.parentElement.parentElement.addEventListener("click", function () {
-                          if (this.getAttribute("allowRender") == "false") {
+                        currentElement.parentElement.parentElement.parentElement.children[0].children[0].addEventListener("click", function () {
+                          /*if (this.getAttribute("allowRender") == "false") {
                             return;
-                          }
+                          }*/
                           var workspace = mainWorkspace;
-                          var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].BlocksAsXML);
+                          var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].BlocksAsXML);
                           //add the variables and lists that don't overlap
                           var [listNames, variableNames] = workspaceVariables();
-                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].variables) {
+                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].variables) {
                             if (!variableNames.includes(name)) {
                               mainWorkspace.createVariable(name, "", null);
                             }
                           }
-                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueID") - 1].lists) {
+                          for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[this.getAttribute("uniqueid") - 1].lists) {
                             if (!listNames.includes(name)) {
                               mainWorkspace.createVariable(name, "list", null);
                             }
@@ -616,7 +616,8 @@ function popupFunctionality() {
                             e.preventDefault();
                             e.stopPropagation();
                             currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
-                            currentElement.parentElement.parentElement.setAttribute("allowRender", "true");
+                            //currentElement.parentElement.parentElement.setAttribute("allowRender", "true");
+                            currentElement.parentElement.parentElement.parentElement.children[0].style.display = "";
                             div.remove();
                           });
                           div.children[1].appendChild(button);
@@ -648,7 +649,8 @@ function popupFunctionality() {
                           div.children[1].appendChild(button);
                           currentElement.parentElement.style = "width: 0px; height: 0px; display: none;";
                           currentElement.parentElement.parentElement.appendChild(div);
-                          currentElement.parentElement.parentElement.setAttribute("allowRender", "false");
+                          currentElement.parentElement.parentElement.parentElement.children[0].style.display = "none";
+                          //currentElement.parentElement.parentElement.parentElement.children[0].children[0].setAttribute("allowRender", "false");
                         }
                       } catch (e) {
                         console.log(e);
@@ -746,7 +748,7 @@ export default async function ({ addon, console }) {
   //create new CSS (style for popup)
   const style = document.createElement('link');
   style.setAttribute('rel', 'stylesheet');
-  style.setAttribute('href', 'http://127.0.0.1:5000/main.css');
+  style.setAttribute('href', apiUrl+'/main.css');
   document.head.appendChild(style);
 
   const js = document.createElement('script');
