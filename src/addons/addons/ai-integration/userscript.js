@@ -1,5 +1,6 @@
 //WHEN PROCESSING BLOCKS: MAKE SURE THAT ALL SHADOW BLOCKS ARE PRESENT
 
+import { replace } from "core-js/fn/symbol";
 import GetSVG from "./parser.js";
 
 
@@ -53,6 +54,36 @@ function workspaceVariables() {
   var variables = allVariables.filter(variable => variable.type === "");
   var variableNames = variables.map(variable => variable.name);
   return [listNames, variableNames];
+}
+
+function getCustomBlockNames(xmlString) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+  const result = [];
+
+  // Find all blocks of type 'procedures_definition'
+  const blocks = xmlDoc.getElementsByTagName("block");
+
+  for (let block of blocks) {
+    if (block.getAttribute("type") === "procedures_definition") {
+      const blockId = block.getAttribute("id");
+
+      // Find all mutations related to this block
+      const mutations = block.getElementsByTagName("mutation");
+
+      for (let mutation of mutations) {
+        if (mutation.hasAttribute("proccode")) {
+          result.push({
+            blockId: blockId,
+            customBlockName: mutation.getAttribute("proccode")
+          });
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
@@ -440,7 +471,7 @@ function popupFunctionality() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-      }, 15000)
+      }, 30000)
         .then(response => {
           if (response.ok) {
             const reader = response.body.getReader();
@@ -583,6 +614,17 @@ function popupFunctionality() {
                               }
                             }
 
+                            if (replacingBlocksInternal.length > 0) {
+                              mainWorkspace.getAllBlocks().forEach(block => {
+                                if (block.type == "procedures_definition") {
+                                  if (replacingBlocksInternal.includes(block.id)) {
+                                    console.log("disposing block", block);
+                                    block.dispose();
+                                  }
+                                }
+                              });
+                            }
+
                             var totalWidth = 0;
                             //Blockly.Xml.domToWorkspace(xml, workspace);
                             Array.from(xml.children).forEach(block => {
@@ -598,14 +640,7 @@ function popupFunctionality() {
                             newBlock.moveBy(x, y);*/
                           }
                           var message = `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`;
-                          /* example body message:
-                          <div class="prompt_label_tWjYZ box_box_2jjDp"><p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p>
-<p>Create 2 new variables: XXX, YYY</p>
-<p>Create 2 new lists: XXX, YYY</p>
-<p>Use the 2 existing variables: XXX,YYY</p>
-<p>Use the 2 existing lists: XXX,YYY</p>
-<p>Create the new custom block "XXX"</p>
-*/
+
                           var [listNames, variableNames] = workspaceVariables();
                           var newVariables = [];
                           var newLists = [];
@@ -626,18 +661,42 @@ function popupFunctionality() {
                             }
                           }
                           if (newVariables.length > 0) {
-                            message += `<li>Create ${newVariables.length} new ${newVariables.length == 1 ? "variable" : "variables"}: ${newVariables.join(", ")}</li>`;
+                            message += `<li>Create ${newVariables.length} new ${newVariables.length == 1 ? "variable" : "variables"}: "${newVariables.join('", "')}"</li>`;
                           }
                           if (newLists.length > 0) {
-                            message += `<li>Create ${newLists.length} new ${newLists.length == 1 ? "list" : "lists"}: ${newLists.join(", ")}</li>`;
+                            message += `<li>Create ${newLists.length} new ${newLists.length == 1 ? "list" : "lists"}: "${newLists.join('", "')}"</li>`;
                           }
                           if (existingVariables.length > 0) {
-                            message += `<li>Use ${existingVariables.length} existing ${existingVariables.length == 1 ? "variable" : "variables"}: ${existingVariables.join(", ")}</li>`;
+                            message += `<li>Use ${existingVariables.length} existing ${existingVariables.length == 1 ? "variable" : "variables"}: "${existingVariables.join('", "')}"</li>`;
                           }
                           if (existingLists.length > 0) {
-                            message += `<li>Use ${existingLists.length} existing ${existingLists.length == 1 ? "list" : "lists"}: ${existingLists.join(", ")}</li>`;
+                            message += `<li>Use ${existingLists.length} existing ${existingLists.length == 1 ? "list" : "lists"}: "${existingLists.join('", "')}"</li>`;
+                          }                          
+                          var currentWorkspaceBlocks = getCustomBlockNames(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace)));
+                          var newBlocks = getCustomBlockNames(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
+                          //if their are overlapping ones give a warning
+                          var replacingBlocks = [];
+                          var replacingBlocksInternal = [];
+                          var trulyNewBlocks = [];
+
+                          for (var block of newBlocks) {
+                            var matchingBlock = currentWorkspaceBlocks.find(currentBlock => currentBlock.customBlockName === block.customBlockName);
+                            if (matchingBlock) {
+                              replacingBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").trim() + "\"");
+                              replacingBlocksInternal.push(matchingBlock.blockId);
+                            } else {
+                              trulyNewBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").trim() + "\"");
+                            }
                           }
-                          
+                          // List truly new blocks
+                          if (trulyNewBlocks.length > 0) {
+                            message += `<li>Create ${trulyNewBlocks.length} new block${trulyNewBlocks.length == 1 ? "" : "s"}: ${trulyNewBlocks.join(", ")}</li>`;
+                          }
+
+                          // List blocks that are being replaced
+                          if (replacingBlocks.length > 0) {
+                            message += `<li>Replace ${replacingBlocks.length} existing block${replacingBlocks.length == 1 ? "" : "s"}: ${replacingBlocks.join(", ")} <span><p class="errorMessage">(THIS WILL REPLACE YOUR CURRENT BLOCK DEFINITION)</p></span></li>`;
+                          }
                           if (message === `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`) {
                             message = `<p>This code does not create/use any variables or lists.</p>`;
                           } else {
