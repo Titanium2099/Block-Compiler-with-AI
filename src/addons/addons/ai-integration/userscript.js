@@ -43,7 +43,7 @@ document.addEventListener("mousemove", (event) => {
 });
 
 function currentSpriteName() {
-  return document.getElementsByClassName("input_input-form_l9eYg sprite-info_sprite-input_17wjb")[0].value; //hacky way to get the sprite name, should be replaced with a better way
+  return vm.runtime.getEditingTarget().sprite.name;
 }
 
 function workspaceVariables() {
@@ -155,7 +155,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
   if (document.querySelector('.container') != null) { //reopen the popup
     document.querySelector('.container').style.display = '';
-    document.querySelector('.container').style.zIndex = 100000000;
+    document.querySelector('.container').style.zIndex = 509;
     //FINISH ADDING SUPPORT TO reopening popup
     var textareaa = document.getElementById('auto-resizing-textarea');
     //focus on textarea
@@ -174,7 +174,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     const div = document.createElement('div');
     div.className = 'container';
     div.id = 'torchyPopup';
-    div.style.zIndex = 100000000;
+    div.style.zIndex = 509;
     div.style.position = 'absolute';
     const divWidth = 452;
     const divHeight = 302;
@@ -211,7 +211,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
   const div = document.createElement('div');
   div.className = 'container';
-  div.style.zIndex = 100000000;
+  div.style.zIndex = 509;
   div.style.position = 'absolute';
 
   const divWidth = 452;
@@ -429,7 +429,15 @@ function popupFunctionality() {
       `;
       document.getElementById('chat_content').appendChild(userMessage);
     }
-    const messageContents = input.value + "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks;
+    var customNames = "";
+    for (var customName of vm.runtime.getEditingTarget().sprite.costumes) customNames += customName.name + ", ";
+    var soundNames = "";
+    for (var soundName of vm.runtime.getEditingTarget().sprite.sounds) soundNames += soundName.name + ", ";
+    var allSpriteNames = vm.runtime.targets
+    .filter(target => target.isSprite && target.getName() !== "Stage")
+    .map(sprite => sprite.getName())
+    .join(", ");
+    const messageContents = input.value + (document.AI_INTEGRATION.currentInputHasAttachment ? "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks : "")+ "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
     input.value = '';
     //reset input height
     input.style.height = '20px';
@@ -631,7 +639,11 @@ function popupFunctionality() {
                               const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
                               const x = workspace.scrollX + totalWidth || 0;
                               const y = workspace.scrollY || 0;
+                              try{
                               newBlock.moveBy(x, y);
+                              }catch(e){
+                                console.error("failed to move block",e);
+                              }
                               totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
                             });
                             /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
