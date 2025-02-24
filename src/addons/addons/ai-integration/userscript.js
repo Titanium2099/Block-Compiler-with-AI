@@ -694,10 +694,10 @@ function popupFunctionality() {
                           for (var block of newBlocks) {
                             var matchingBlock = currentWorkspaceBlocks.find(currentBlock => currentBlock.customBlockName === block.customBlockName);
                             if (matchingBlock) {
-                              replacingBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").trim() + "\"");
+                              replacingBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n","").trim() + "\"");
                               replacingBlocksInternal.push(matchingBlock.blockId);
                             } else {
-                              trulyNewBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").trim() + "\"");
+                              trulyNewBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n","").trim() + "\"");
                             }
                           }
                           // List truly new blocks
