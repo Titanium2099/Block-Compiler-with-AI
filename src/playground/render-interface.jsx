@@ -16,7 +16,7 @@
 
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import {connect} from 'react-redux';
 import {compose} from 'redux';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
@@ -44,6 +44,7 @@ import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
 import {APP_NAME} from '../lib/brand.js';
 
 import styles from './interface.css';
+import TorchyPopup from '../containers/torchy-popup.jsx'; // Import TorchyPopup
 
 const isInvalidEmbed = window.parent !== window;
 
@@ -196,7 +197,62 @@ class Interface extends React.Component {
     constructor (props) {
         super(props);
         this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
+        this.state = { // Initialize state here
+            showPopup: false,
+            attachmentDetails: {
+                attachmentBlocks: '',
+                attachmentText: ''
+            },
+            canUseAI: false,
+            X_COORDINATE: 0,
+            Y_COORDINATE: 0,
+            currentSpriteName: 'Unknown Sprite',
+            popupInitialValue: ''
+        };
     }
+    componentDidMount() {
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+    
+        // Track mouse position globally
+        this.handleMouseMove = (event) => {
+            this.lastMouseX = event.clientX;
+            this.lastMouseY = event.clientY;
+        };
+    
+        window.addEventListener('mousemove', this.handleMouseMove);
+    
+        this.handleAiButtonClicked = () => {
+            const attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(Blockly.getMainWorkspace()));
+            const SpriteName = vm.runtime.getEditingTarget().sprite.name;
+    
+            this.setState({
+                attachmentDetails: {
+                    attachmentBlocks: attachmentBlocks,
+                    attachmentText: `${SpriteName} - Entire Sprite`
+                },
+                currentSpriteName: SpriteName,
+                popupInitialValue: '',
+                showPopup: true,
+                X_COORDINATE: this.lastMouseX,
+                Y_COORDINATE: this.lastMouseY 
+            });
+        };
+    
+        window.addEventListener('ai-button-clicked', this.handleAiButtonClicked);
+    
+        // Simulate setting canUseAI (CHANGE)
+        this.setState({
+            canUseAI: true
+        });
+    }
+    
+    componentWillUnmount() {
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('ai-button-clicked', this.handleAiButtonClicked);
+    }
+    
+
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
             loadServiceWorker();
@@ -209,6 +265,15 @@ class Interface extends React.Component {
             document.title = `${title} - ${APP_NAME}`;
         }
     }
+    handleClosePopup = () => {
+        this.setState({showPopup: false});
+    }
+
+    handleClearChat = () => {
+        // Implement the logic to clear the chat here
+        console.log("Chat cleared!");
+    };
+
     render () {
         if (isInvalidEmbed) {
             return <InvalidEmbed />;
@@ -229,6 +294,16 @@ class Interface extends React.Component {
         } = this.props;
         const isHomepage = isPlayerOnly && !isFullScreen;
         const isEditor = !isPlayerOnly;
+
+        const { // Get the state values from `this.state`
+            showPopup,
+            attachmentDetails,
+            canUseAI,
+            X_COORDINATE,
+            Y_COORDINATE,
+            popupInitialValue
+        } = this.state;
+
         return (
             <div
                 className={classNames(styles.container, {
@@ -262,6 +337,18 @@ class Interface extends React.Component {
                         backpackHost="_local_"
                         {...props}
                     />
+                     {showPopup && ( // Conditionally render the popup
+                        <TorchyPopup
+                            fileAttached={true}
+                            fileAttachedText={attachmentDetails.attachmentText}
+                            inputValue={popupInitialValue}
+                            onClose={this.handleClosePopup}
+                            canUseAI={canUseAI}
+                            X_COORDINATE={X_COORDINATE}
+                            Y_COORDINATE={Y_COORDINATE}
+                            onClearChat={this.handleClearChat}
+                        />
+                    )}
                     {isHomepage ? (
                         <React.Fragment>
                             {isBrowserSupported() ? null : (

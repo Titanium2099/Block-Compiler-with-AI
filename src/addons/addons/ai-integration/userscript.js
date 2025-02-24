@@ -19,6 +19,7 @@ window.addEventListener('blockError', (event) => {
   document.AI_INTEGRATION.errorsDetected.push(event.detail);
 });
 
+/*
 document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it just make debugging alot easier (will do it properly later)
   AI_currently_blabbering: false,
   currentInputHasAttachment: false,
@@ -34,7 +35,7 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   canUse: true,
   errorsDetected: [],
 };
-
+*/
 const originalState = document.AI_INTEGRATION;
 
 document.addEventListener("mousemove", (event) => {
@@ -872,7 +873,7 @@ export default async function ({ addon, console }) {
   style.setAttribute('rel', 'stylesheet');
   style.setAttribute('href', apiUrl + '/main.css');
   document.head.appendChild(style);
-
+  /*
   const js = document.createElement('script');
   js.src = "https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js";
   document.head.appendChild(js);
@@ -953,5 +954,5 @@ export default async function ({ addon, console }) {
   window.addEventListener('ai-button-clicked', function () {
     document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
     createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
-  });
+  });*/
 }
