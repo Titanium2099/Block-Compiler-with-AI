@@ -26,10 +26,14 @@ class TorchyPopup extends React.Component {
         attachmentBlocks: "",
       },
       converter: null,
+      chatHistory: [],
+      CodeChunks: [],
+
     };
 
     this.containerRef = React.createRef();
     this.textareaRef = React.createRef();
+    this.chatContentRef = React.createRef(); // Add a ref to the chat content
     this.resistanceThreshold = 5;
 
     this.handleTextAreaChange = this.handleTextAreaChange.bind(this);
@@ -41,6 +45,8 @@ class TorchyPopup extends React.Component {
     this.handleClearChat = this.handleClearChat.bind(this);
     this.handleSubmitChat = this.handleSubmitChat.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.requestChat = this.requestChat.bind(this); // Bind requestChat
+
   }
 
   componentDidMount() {
@@ -77,11 +83,6 @@ class TorchyPopup extends React.Component {
       }, 50);
     }
   }
-
-  requestChat = async (message) => {
-    console.log("Requesting chat with message: ", message);
-  }
-
 
   adjustTextAreaHeight(value) {
     if (value.length > 64 || value.includes('\n')) {
@@ -214,7 +215,7 @@ class TorchyPopup extends React.Component {
 
   handleClearChat() {
     if (window.confirm("Are you sure you want to clear the chat?")) {
-      this.setState({ chatMessages: [] });
+      this.setState({ chatMessages: [], chatHistory:[] });
     }
     if (this.props.onClearChat) {
       this.props.onClearChat();
@@ -268,9 +269,7 @@ class TorchyPopup extends React.Component {
           this.adjustTextAreaHeight('');
           this.setState({ textValue: '' });
 
-          if (this.requestChat) {
-            this.requestChat(messageContents);
-          }
+          this.requestChat(messageContents);
         }
 
         input.value = '';
@@ -328,6 +327,188 @@ class TorchyPopup extends React.Component {
       </div>
     ));
   }
+
+  // fetchWithTimeout function
+  fetchWithTimeout = (url, options = {}, timeout = 5000) => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const fetchPromise = fetch(url, { ...options, signal });
+
+    // Set timeout to abort fetch
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    return fetchPromise
+      .finally(() => clearTimeout(timeoutId));
+  }
+
+
+  requestChat(messageContents) {
+    if (!this.chatContentRef.current) {
+      console.error("chat_content ref is not available.");
+      return;
+    }
+    if (!window.AI_INTEGRATION) {
+      console.error("AI_INTEGRATION is not available.");
+      return;
+    }
+    const authToken = window.AI_INTEGRATION.authToken;
+    const apiUrl = window.AI_INTEGRATION.apiUrl; 
+    
+    const loadingDots = document.createElement('div');
+    loadingDots.className = 'ai-message';
+    loadingDots.id = "AI_is_thinking_what_to_blabber";
+    loadingDots.innerHTML = `
+      <div class="message" style="width: 22px;">
+        <div class="dot-elastic"></div>
+      </div>
+    `;
+    this.chatContentRef.current.appendChild(loadingDots); // Use the ref
+    this.chatContentRef.current.scrollTop = this.chatContentRef.current.scrollHeight; // Use the ref
+
+    this.setState({ CodeChunks: [] });
+
+    const data = {
+      api_key: authToken,
+      message: messageContents,
+      history: this.state.chatHistory,
+    };
+
+    this.fetchWithTimeout(apiUrl + "/chat", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }, 30000)
+      .then(response => {
+        if (response.ok) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let streamResult = '';
+
+          //remove the loading dots
+          if (document.getElementById('AI_is_thinking_what_to_blabber')) {
+            document.getElementById('AI_is_thinking_what_to_blabber').remove();
+          }
+
+          if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
+            document.getElementById("currentlyBlabberingOnThis").remove();
+          }
+          const aiMessage = document.createElement('div');
+          aiMessage.className = 'ai-message';
+          aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
+          this.chatContentRef.current.appendChild(aiMessage);
+
+          // Stream the response
+          const TIMEOUT_MS = 5000; // 5 seconds timeout read
+
+          const readWithTimeout = (reader) => {
+            return Promise.race([
+              reader.read(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Read operation timed out")), TIMEOUT_MS)
+              ),
+            ]);
+          };
+
+
+          const processText = ({ done, value }) => {
+            if (done) {
+              this.setState(prevState => ({
+                AI_currently_blabbering: false,
+                chatHistory: [
+                  ...prevState.chatHistory,
+                  { "role": "user", "message": messageContents },
+                  { "role": "assistant", "message": streamResult }
+                ],
+                currentInputHasAttachment: false,
+              }));
+              return;
+            }
+            streamResult += decoder.decode(value, { stream: true });
+            const updateMessageContents = () => {
+              let edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
+              edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
+              if (this.state.converter) {
+                edittedStreamResult = this.state.converter.makeHtml(edittedStreamResult);
+              }
+
+              if (document.getElementById('currentlyBlabberingOnThis')) {
+                document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
+                this.chatContentRef.current.scrollTop = this.chatContentRef.current.scrollHeight;
+                readWithTimeout(reader).then(processText);
+              }
+            };
+            if ((streamResult.match(/```/g) || []).length % 2 === 1) { //fixed animation resetting bug
+              if (document.getElementById('currentlyBlabberingOnThis') && document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"animated-text\">currently writing a code block</p></div>")) {
+                readWithTimeout(reader).then(processText);
+              } else {
+                updateMessageContents();
+              }
+            } else {
+              updateMessageContents();
+            }
+          };
+          readWithTimeout(reader)
+            .then(processText)
+            .catch(error => {
+              console.error("Error reading:", error);
+              this.setState({ AI_currently_blabbering: false });
+              if (document.getElementById('currentlyBlabberingOnThis')) {
+                document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+              } else {
+                if (document.getElementById('AI_is_thinking_what_to_blabber')) {
+                  document.getElementById('AI_is_thinking_what_to_blabber').remove();
+                }
+                if (document.getElementById("currentlyBlabberingOnThis")) {
+                  document.getElementById("currentlyBlabberingOnThis").remove();
+                }
+                const aiMessage = document.createElement('div');
+                aiMessage.className = 'ai-message';
+                aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class="errorMessage">Error reading response</p>`;
+                this.chatContentRef.current.appendChild(aiMessage);
+              }
+            });
+        } else {
+          console.error('Error:', response.statusText);
+          this.setState({ AI_currently_blabbering: false });
+          if (document.getElementById('currentlyBlabberingOnThis')) {
+            document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+          } else {
+            if (document.getElementById('AI_is_thinking_what_to_blabber')) {
+              document.getElementById('AI_is_thinking_what_to_blabber').remove();
+            }
+            if (document.getElementById("currentlyBlabberingOnThis")) {
+              document.getElementById("currentlyBlabberingOnThis").remove();
+            }
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'ai-message';
+            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class="errorMessage">Error reading response</p>`;
+            this.chatContentRef.current.appendChild(aiMessage);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Request failed', error);
+        this.setState({ AI_currently_blabbering: false });
+        if (document.getElementById('currentlyBlabberingOnThis')) {
+          document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+        } else {
+          if (document.getElementById('AI_is_thinking_what_to_blabber')) {
+            document.getElementById('AI_is_thinking_what_to_blabber').remove();
+          }
+          if (document.getElementById("currentlyBlabberingOnThis")) {
+            document.getElementById("currentlyBlabberingOnThis").remove();
+          }
+          const aiMessage = document.createElement('div');
+          aiMessage.className = 'ai-message';
+          aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class="errorMessage">Error reading response</p>`;
+          this.chatContentRef.current.appendChild(aiMessage);
+        }
+      });
+  }
+
+
 
   render() {
     if (!this.state.isOpen) {
@@ -428,7 +609,7 @@ class TorchyPopup extends React.Component {
             />
           </svg>
         </div>
-        <div className="content" id="chat_content">
+        <div className="content" id="chat_content" ref={this.chatContentRef}>
           <div className="Popup_Header">
             <div className="a" dangerouslySetInnerHTML={{ __html: FireAnimation }}></div>
             <p className="b">Hi I'm Torchy, How can I help you today?</p>
@@ -486,7 +667,7 @@ class TorchyPopup extends React.Component {
     );
   }
 }
-
+  
 TorchyPopup.propTypes = {
   fileAttached: PropTypes.bool,
   fileAttachedText: PropTypes.string,
