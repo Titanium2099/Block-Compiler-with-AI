@@ -50,6 +50,8 @@ import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
 import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
 import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
 
+import TorchyPopupManager from '../../containers/torchy-popup-manager.jsx';
+
 const messages = defineMessages({
     addExtension: {
         id: 'gui.gui.addExtension',
@@ -427,6 +429,7 @@ const GUIComponent = props => {
                             {backpackVisible ? (
                                 <Backpack host={backpackHost} />
                             ) : null}
+                            <TorchyPopupManager />
                         </Box>
 
                         <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>

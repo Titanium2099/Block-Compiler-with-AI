@@ -49,6 +49,7 @@ const DropAreaHOC = function (dragTypes) {
             }
 
             componentWillReceiveProps (newProps) {
+                console.log('DropAreaHOC newProps:', newProps);
                 // If `dragging` becomes true, record the drop area rectangle
                 if (newProps.dragInfo.dragging && !this.props.dragInfo.dragging) {
                     this.dropAreaRect = this.ref && this.ref.getBoundingClientRect();
@@ -64,6 +65,7 @@ const DropAreaHOC = function (dragTypes) {
                     dragTypes.includes(newProps.dragInfo.dragType)) {
                     const {x, y} = newProps.dragInfo.currentOffset;
                     const {top, right, bottom, left} = this.dropAreaRect;
+                    console.log('Coordinates:', {x, y, top, right, bottom, left}); // Add this
                     if (x > left && x < right && y > top && y < bottom) {
                         this.setState({dragOver: true});
                     } else {

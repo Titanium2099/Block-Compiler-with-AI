@@ -14,7 +14,7 @@ import {
     codePayload,
     LOCAL_API
 } from '../lib/backpack-api';
-import DragConstants from '../lib/drag-constants';
+import DragConstants from '../lib/drag-constants'; 
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 
 import {connect} from 'react-redux';
@@ -102,6 +102,7 @@ class Backpack extends React.Component {
         throw error;
     }
     handleDrop (dragInfo) {
+        console.log('handleDrop', dragInfo);
         let payloader = null;
         let presaveAsset = null;
         switch (dragInfo.dragType) {
