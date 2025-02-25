@@ -203,7 +203,6 @@ class Interface extends React.Component {
                 attachmentBlocks: '',
                 attachmentText: ''
             },
-            canUseAI: false,
             X_COORDINATE: 0,
             Y_COORDINATE: 0,
             currentSpriteName: 'Unknown Sprite',
@@ -240,11 +239,6 @@ class Interface extends React.Component {
         };
     
         window.addEventListener('ai-button-clicked', this.handleAiButtonClicked);
-    
-        // Simulate setting canUseAI (CHANGE)
-        this.setState({
-            canUseAI: true
-        });
     }
     
     componentWillUnmount() {
@@ -298,7 +292,6 @@ class Interface extends React.Component {
         const { // Get the state values from `this.state`
             showPopup,
             attachmentDetails,
-            canUseAI,
             X_COORDINATE,
             Y_COORDINATE,
             popupInitialValue
@@ -343,7 +336,6 @@ class Interface extends React.Component {
                             fileAttachedText={attachmentDetails.attachmentText}
                             inputValue={popupInitialValue}
                             onClose={this.handleClosePopup}
-                            canUseAI={canUseAI}
                             X_COORDINATE={X_COORDINATE}
                             Y_COORDINATE={Y_COORDINATE}
                             onClearChat={this.handleClearChat}

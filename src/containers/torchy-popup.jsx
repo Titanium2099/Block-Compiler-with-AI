@@ -515,7 +515,7 @@ class TorchyPopup extends React.Component {
       return null;
     }
 
-    if (!this.props.canUseAI) {
+    if (window.AI_INTEGRATION === undefined || (window.AI_INTEGRATION && (window.AI_INTEGRATION.authToken === undefined || window.AI_INTEGRATION.authToken.trim() === ""))) {
       return (
         <div
           className="container no_api_key"
@@ -529,7 +529,7 @@ class TorchyPopup extends React.Component {
           ref={this.containerRef}
           onMouseDown={this.handleMouseDown}
         >
-          <div className="content" id="chat_content">
+          <div className="content" id="chat_content" style={{display: "flex", flexDirection: "column"}}>
             <div className="a">
               <svg
                 fill="none"
@@ -673,7 +673,6 @@ TorchyPopup.propTypes = {
   fileAttachedText: PropTypes.string,
   inputValue: PropTypes.string,
   onClose: PropTypes.func,
-  canUseAI: PropTypes.bool,
   X_COORDINATE: PropTypes.number,
   Y_COORDINATE: PropTypes.number,
   onClearChat: PropTypes.func,
