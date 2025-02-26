@@ -42,6 +42,13 @@ document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
+function closePopup() {
+  if(document.querySelector('.container') == null) return;
+  document.querySelector('.container').style.display = 'none';
+  document.querySelector('.container').style.zIndex = -999999;
+  document.AI_INTEGRATION.popupOpen = false;
+}
+
 function currentSpriteName() {
   return vm.runtime.getEditingTarget().sprite.name;
 }
@@ -370,9 +377,7 @@ function popupFunctionality() {
   });
 
   document.getElementById('closePopup').addEventListener('click', () => {
-    document.querySelector('.container').style.display = 'none';
-    document.querySelector('.container').style.zIndex = -999999;
-    document.AI_INTEGRATION.popupOpen = false;
+    closePopup();
   });
   document.getElementById('clearChat').addEventListener('click', () => {
     //prompt user if they are sure
@@ -436,10 +441,10 @@ function popupFunctionality() {
     var soundNames = "";
     for (var soundName of vm.runtime.getEditingTarget().sprite.sounds) soundNames += soundName.name + ", ";
     var allSpriteNames = vm.runtime.targets
-    .filter(target => target.isSprite && target.getName() !== "Stage")
-    .map(sprite => sprite.getName())
-    .join(", ");
-    const messageContents = input.value + (document.AI_INTEGRATION.currentInputHasAttachment ? "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks : "")+ "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
+      .filter(target => target.isSprite && target.getName() !== "Stage")
+      .map(sprite => sprite.getName())
+      .join(", ");
+    const messageContents = input.value + (document.AI_INTEGRATION.currentInputHasAttachment ? "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks : "") + "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
     input.value = '';
     //reset input height
     input.style.height = '20px';
@@ -641,10 +646,10 @@ function popupFunctionality() {
                               const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
                               const x = workspace.scrollX + totalWidth || 0;
                               const y = workspace.scrollY || 0;
-                              try{
-                              newBlock.moveBy(x, y);
-                              }catch(e){
-                                console.error("failed to move block",e);
+                              try {
+                                newBlock.moveBy(x, y);
+                              } catch (e) {
+                                console.error("failed to move block", e);
                               }
                               totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
                             });
@@ -686,7 +691,7 @@ function popupFunctionality() {
                           }
                           if (existingLists.length > 0) {
                             message += `<li>Use ${existingLists.length} existing ${existingLists.length == 1 ? "list" : "lists"}: "${existingLists.join('", "')}"</li>`;
-                          }                          
+                          }
                           var currentWorkspaceBlocks = getCustomBlockNames(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace)));
                           var newBlocks = getCustomBlockNames(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                           //if their are overlapping ones give a warning
@@ -697,10 +702,10 @@ function popupFunctionality() {
                           for (var block of newBlocks) {
                             var matchingBlock = currentWorkspaceBlocks.find(currentBlock => currentBlock.customBlockName === block.customBlockName);
                             if (matchingBlock) {
-                              replacingBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n","").trim() + "\"");
+                              replacingBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n", "").trim() + "\"");
                               replacingBlocksInternal.push(matchingBlock.blockId);
                             } else {
-                              trulyNewBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n","").trim() + "\"");
+                              trulyNewBlocks.push("\"" + block.customBlockName.replaceAll("%s", "").replaceAll("%b", "").replaceAll("%n", "").trim() + "\"");
                             }
                           }
                           // List truly new blocks
@@ -953,6 +958,16 @@ export default async function ({ addon, console }) {
     },
     { blocks: true }
   );
+
+  addon.tab.redux.addEventListener("statechanged", ({ detail }) => {
+    if (detail.action.type === "scratch-gui/navigation/ACTIVATE_TAB") {
+      const activeTabIndex = detail.action.activeTabIndex;
+      //console.log(`Tab changed to index: ${activeTabIndex}`);
+      if(activeTabIndex != 0){
+        closePopup();
+      }
+    }
+  });
 
   window.addEventListener('ai-button-clicked', function () {
     document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
