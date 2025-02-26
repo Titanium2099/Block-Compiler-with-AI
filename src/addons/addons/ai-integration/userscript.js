@@ -125,6 +125,7 @@ async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
     console.error(e);
     response.status = "error";
   }
+  /* No longer needed as I now make a workspace for each parse
   //due to the way that the code is parsed, the variables and lists are added to the workspace and we need to remove them (if they don't overlap)
   response.variables.forEach(variable => {
     if (!response.overlappingVars.includes(variable)) {
@@ -136,6 +137,7 @@ async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
       if (mainWorkspace.getVariable(list, "list") != null) mainWorkspace.deleteVariableById(mainWorkspace.getVariable(list, "list").getId())
     }
   });
+  */
   return response;
 }
 
@@ -864,7 +866,7 @@ function popupFunctionality() {
 export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
   mainWorkspace = Blockly.getMainWorkspace();
-  blockParser.defineBlockly(Blockly);
+  blockParser.init(Blockly);
   authToken = addon.settings.get("GeminiAPIKey");
 
   //create new CSS (style for popup)

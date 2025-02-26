@@ -7,6 +7,54 @@
  *     console.log(svgString); // Process the exported SVG string here
  *   });
  */
+
+class XMLWorkspaceRenderer {
+  constructor(container) {
+      this.container = container;
+      this.workspace = null;
+      this.init();
+  }
+
+  async init() {
+      if (!this.container) {
+          console.error("Container element is missing!");
+          return;
+      }
+
+      //const ScratchBlocks = LazyScratchBlocks.get();
+      if (!ScratchBlocks) {
+          console.error("Scratch Blocks not loaded!");
+          return;
+      }
+
+      const workspaceConfig = {
+          zoom: {
+              controls: false,
+              wheel: false,
+              startScale: 0.9
+          },
+          comments: false,
+          collapse: false,
+          scrollbars: true,
+          media: "static/blocks-media/default/",
+          rtl: false
+      };
+
+      const oldDefaultToolbox = ScratchBlocks.Blocks.defaultToolbox;
+      ScratchBlocks.Blocks.defaultToolbox = null;
+
+      this.workspace = ScratchBlocks.inject(this.container, workspaceConfig);
+
+      // HACK to remove the toolbox
+      ScratchBlocks.Blocks.defaultToolbox = oldDefaultToolbox;
+  }
+
+  dispose() {
+      if (this.workspace) {
+          this.workspace.dispose();
+      }
+  }
+} 
 export default class GetSVG {
   constructor() {
     //this.blockXml = blockXml;
@@ -15,9 +63,9 @@ export default class GetSVG {
     this.exSVG.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
     this.exSVG.setAttribute("version", "1.1");
   }
-  defineBlockly(Blockly) {
+  /*defineBlockly(Blockly) {
     this.Blockly = Blockly;
-  }
+  }*/
   // Method to set CSS variables for the element
   setCSSVars(element) {
     for (let property of document.documentElement.style) {
@@ -51,12 +99,15 @@ export default class GetSVG {
   }
 
   async getSVG(blockXml,uniqueCommentID) {
+    if (!this.Blockly) {
+      console.error("Blockly is not initialized. Call init(Blockly) first.");
+      return;
+    }
     this.blockXml = this.Blockly.Xml.textToDom(blockXml);
 
-    let workspace = this.Blockly.getMainWorkspace(); // Get the existing workspace
-
+    let workspace = new XMLWorkspaceRenderer(document.getElementById("parsingInjectionDiv")).workspace;
     // Store existing block IDs before adding new blocks
-    let existingBlockIds = workspace.getAllBlocks().map(block => block.id);
+    //let existingBlockIds = workspace.getAllBlocks().map(block => block.id);
 
 
     var returnedData = "<div style=\"display: flex;flex-direction: column;\">";
@@ -67,11 +118,13 @@ export default class GetSVG {
   }
     returnedData += "</div>";
     // Remove only the newly added blocks (keep existing workspace intact)
-    workspace.getAllBlocks().forEach(block => {
+    /*workspace.getAllBlocks().forEach(block => {
       if (!existingBlockIds.includes(block.id)) {
         block.dispose(); // Remove only the new block
       }
-    });
+    });*/
+    //just unset the entire workspace
+    workspace = null;
     return returnedData;
   }
   // Main method to fetch the SVG for a given blockXml
@@ -136,5 +189,13 @@ export default class GetSVG {
         item.setAttribute("xlink:href", dataUri);
       })
     );
+  }
+
+  init(Blockly) {
+    this.Blockly = Blockly;
+    var div = document.createElement("div");
+    div.id = "parsingInjectionDiv";
+    div.style.display = "none";
+    document.body.appendChild(div);
   }
 }
