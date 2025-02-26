@@ -195,7 +195,7 @@ export default class GetSVG {
     this.Blockly = Blockly;
     var div = document.createElement("div");
     div.id = "parsingInjectionDiv";
-    div.style.display = "none";
+    //div.style.display = "none"; //messes up the SVG rendering 
     document.body.appendChild(div);
   }
 }

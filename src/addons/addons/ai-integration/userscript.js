@@ -648,6 +648,7 @@ function popupFunctionality() {
                               }
                               totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
                             });
+                            mainWorkspace.refreshToolboxSelection_();
                             /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
                             const x = workspace.scrollX || 0;
                             const y = workspace.scrollY || 0;
@@ -865,7 +866,8 @@ function popupFunctionality() {
 
 export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
-  mainWorkspace = Blockly.getMainWorkspace();
+  //mainWorkspace = Blockly.getMainWorkspace();
+  mainWorkspace = addon.tab.traps.getWorkspace();
   blockParser.init(Blockly);
   authToken = addon.settings.get("GeminiAPIKey");
 
