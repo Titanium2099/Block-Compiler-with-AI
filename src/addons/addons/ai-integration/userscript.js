@@ -7,6 +7,7 @@ import GetSVG from "./parser.js";
 const apiUrl = "http://127.0.0.1:5000";
 let authToken;
 var converter;
+let Gaddon;
 const resistanceThreshold = 10;
 
 const xmlParser = new DOMParser();
@@ -796,9 +797,10 @@ function popupFunctionality() {
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
 
+                const animatedTextClass = Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text";
                 function updateMessageContents() {
                   var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
-                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"animated-text\">currently writing a code block</p></div>");
+                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\""+animatedTextClass+"\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
                   document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
@@ -806,7 +808,7 @@ function popupFunctionality() {
                 }
                 let instanceCount = 0;
                 if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
-                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"animated-text\">currently writing a code block</p></div>")) {
+                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\""+animatedTextClass+"\">currently writing a code block</p></div>")) {
                     reader.read().then(processText);
                   } else {
                     updateMessageContents()
@@ -875,7 +877,7 @@ export default async function ({ addon, console }) {
   mainWorkspace = addon.tab.traps.getWorkspace();
   blockParser.init(Blockly);
   authToken = addon.settings.get("GeminiAPIKey");
-
+  Gaddon = addon;
   //create new CSS (style for popup)
   const style = document.createElement('link');
   style.setAttribute('rel', 'stylesheet');
