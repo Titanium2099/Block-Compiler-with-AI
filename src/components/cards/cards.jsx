@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
-import React, {Fragment} from 'react';
+import React, { useRef, useEffect, Fragment } from 'react';
 import classNames from 'classnames';
-import {FormattedMessage} from 'react-intl';
+import { FormattedMessage } from 'react-intl';
 import Draggable from 'react-draggable';
 
 import styles from './card.css';
@@ -12,15 +12,13 @@ import expandIcon from './icon--expand.svg';
 import rightArrow from './icon--next.svg';
 import leftArrow from './icon--prev.svg';
 
-import helpIcon from '../../lib/assets/icon--tutorials.svg';
 import closeIcon from './icon--close.svg';
 
-import {translateVideo} from '../../lib/libraries/decks/translate-video.js';
-import {translateImage} from '../../lib/libraries/decks/translate-image.js';
+import { translateVideo } from '../../lib/libraries/decks/translate-video.js';
 
-const CardHeader = ({onCloseCards, onShrinkExpandCards, onShowAll, totalSteps, step, expanded}) => (
+const CardHeader = ({ onCloseCards, onShrinkExpandCards, totalSteps, step, expanded }) => (
     <div className={expanded ? styles.headerButtons : classNames(styles.headerButtons, styles.headerButtonsHidden)}>
-        <div
+        {/* <div
             className={styles.allButton}
             onClick={onShowAll}
         >
@@ -33,7 +31,8 @@ const CardHeader = ({onCloseCards, onShrinkExpandCards, onShowAll, totalSteps, s
                 description="Title for button to return to tutorials library"
                 id="gui.cards.all-tutorials"
             />
-        </div>
+        </div>*/}
+        <div className={styles.spacer} />
         {totalSteps > 1 ? (
             <div className={styles.stepsList}>
                 {Array(totalSteps).fill(0)
@@ -85,71 +84,73 @@ const CardHeader = ({onCloseCards, onShrinkExpandCards, onShowAll, totalSteps, s
     </div>
 );
 
-class VideoStep extends React.Component {
+const VideoStep = ({ expanded, video, title }) => {
+    const videoRef = useRef(null);
 
-    componentDidMount () {
-        const script = document.createElement('script');
-        script.src = `https://fast.wistia.com/embed/medias/${this.props.video}.jsonp`;
-        script.async = true;
-        script.setAttribute('id', 'wistia-video-content');
-        document.body.appendChild(script);
+    useEffect(() => {
 
-        const script2 = document.createElement('script');
-        script2.src = 'https://fast.wistia.com/assets/external/E-v1.js';
-        script2.async = true;
-        script2.setAttribute('id', 'wistia-video-api');
-        document.body.appendChild(script2);
-    }
+        const currentVideo = videoRef.current;
 
-    // We use the Wistia API here to update or pause the video dynamically:
-    // https://wistia.com/support/developers/player-api
-    componentDidUpdate (prevProps) {
-        // Ensure the wistia API is loaded and available
-        if (!(window.Wistia && window.Wistia.api)) return;
+        if (!currentVideo) return;
+        currentVideo.src = video;
 
-        // Get a handle on the currently loaded video
-        const video = window.Wistia.api(prevProps.video);
+        if(!title) {
+            currentVideo.controls = true;
+            currentVideo.autoplay = false;
+        }else{
+            currentVideo.controls = false;
+            currentVideo.autoplay = true;
+            currentVideo.muted = true;
+            currentVideo.loop = true;
+            //play video
+            currentVideo.play();
 
-        // Reset the video source if a new video has been chosen from the library
-        if (prevProps.video !== this.props.video) {
-            video.replaceWith(this.props.video);
+        }
+        if (!expanded) {
+            currentVideo.pause();
         }
 
-        // Pause the video if the modal is being shrunken
-        if (!this.props.expanded) {
-            video.pause();
-        }
-    }
+        return () => {
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo.removeAttribute('src');
+                currentVideo.load();
+            }
+        };
+    }, [expanded, video]);
 
-    componentWillUnmount () {
-        const script = document.getElementById('wistia-video-content');
-        script.parentNode.removeChild(script);
-
-        const script2 = document.getElementById('wistia-video-api');
-        script2.parentNode.removeChild(script2);
-    }
-
-    render () {
+    if(!title) {
         return (
             <div className={styles.stepVideo}>
-                <div
-                    className={`wistia_embed wistia_async_${this.props.video}`}
-                    id="video-div"
-                    style={{height: `257px`, width: `466px`}}
-                >
-                    &nbsp;
-                </div>
+                <video
+                    ref={videoRef}
+                    style={{ width: '100%', height: '100%' }}
+                />
             </div>
         );
+    }else{
+        return (
+            <Fragment>
+                <div className={styles.stepTitle}>
+                    {title}
+                </div>
+                <div className={styles.stepVideo}>
+                    <video
+                        ref={videoRef}
+                        style={{ width: '100%', height: '100%' }}
+                    />
+                </div>
+            </Fragment>
+        );
     }
-}
+};
 
 VideoStep.propTypes = {
     expanded: PropTypes.bool.isRequired,
     video: PropTypes.string.isRequired
 };
 
-const ImageStep = ({title, image}) => (
+const ImageStep = ({ title, image }) => (
     <Fragment>
         <div className={styles.stepTitle}>
             {title}
@@ -158,19 +159,20 @@ const ImageStep = ({title, image}) => (
             <img
                 className={styles.stepImage}
                 draggable={false}
-                key={image} /* Use src as key to prevent hanging around on slow connections */
+                key={image} // Use src as key
                 src={image}
+                alt={title}
             />
         </div>
     </Fragment>
 );
 
 ImageStep.propTypes = {
-    image: PropTypes.string.isRequired,
+    //image: PropTypes.string.isRequired,
     title: PropTypes.node.isRequired
 };
 
-const NextPrevButtons = ({isRtl, onNextStep, onPrevStep, expanded}) => (
+const NextPrevButtons = ({ isRtl, onNextStep, onPrevStep, expanded }) => (
     <Fragment>
         {onNextStep ? (
             <div>
@@ -212,13 +214,12 @@ NextPrevButtons.propTypes = {
 CardHeader.propTypes = {
     expanded: PropTypes.bool.isRequired,
     onCloseCards: PropTypes.func.isRequired,
-    onShowAll: PropTypes.func.isRequired,
     onShrinkExpandCards: PropTypes.func.isRequired,
     step: PropTypes.number,
     totalSteps: PropTypes.number
 };
 
-const PreviewsStep = ({deckIds, content, onActivateDeckFactory, onShowAll}) => (
+const PreviewsStep = ({ deckIds, content, onActivateDeckFactory, onShowAll }) => (
     <Fragment>
         <div className={styles.stepTitle}>
             <FormattedMessage
@@ -297,7 +298,7 @@ const Cards = props => {
         expanded,
         ...posProps
     } = props;
-    let {x, y} = posProps;
+    let { x, y } = posProps;
 
     if (activeDeckId === null) return;
 
@@ -336,7 +337,7 @@ const Cards = props => {
             <Draggable
                 bounds="parent"
                 cancel="#video-div" // disable dragging on video div
-                position={{x: x, y: y}}
+                position={{ x: x, y: y }}
                 onDrag={onDrag}
                 onStart={onStartDrag}
                 onStop={onEndDrag}
@@ -366,6 +367,7 @@ const Cards = props => {
                                             dragging={dragging}
                                             expanded={expanded}
                                             video={translateVideo(steps[step].video, locale)}
+                                            title={steps[step].title}
                                         />
                                     ) : ( // Else show the deck image and title
                                         <ImageStep
@@ -375,7 +377,7 @@ const Cards = props => {
                                     )
                                 ) : (
                                     <ImageStep
-                                        image={translateImage(steps[step].image, locale)}
+                                        image={steps[step].img}
                                         title={steps[step].title}
                                     />
                                 )
