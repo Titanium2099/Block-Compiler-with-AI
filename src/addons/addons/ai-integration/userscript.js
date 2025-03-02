@@ -1,6 +1,5 @@
-//WHEN PROCESSING BLOCKS: MAKE SURE THAT ALL SHADOW BLOCKS ARE PRESENT
-
-import { replace } from "core-js/fn/symbol";
+import * as htmlparser2 from "htmlparser2";
+import domSerializer from "dom-serializer";
 import GetSVG from "./parser.js";
 
 
@@ -36,7 +35,7 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   errorsDetected: [],
 };
 
-const originalState = document.AI_INTEGRATION;
+const originalState = JSON.parse(JSON.stringify(document.AI_INTEGRATION));
 
 document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.X_COORDINATE = event.clientX;
@@ -44,7 +43,7 @@ document.addEventListener("mousemove", (event) => {
 });
 
 function closePopup() {
-  if(document.querySelector('.container') == null) return;
+  if (document.querySelector('.container') == null) return;
   document.querySelector('.container').style.display = 'none';
   document.querySelector('.container').style.zIndex = -999999;
   document.AI_INTEGRATION.popupOpen = false;
@@ -116,13 +115,33 @@ async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
     let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
     //check if it successfully parsed
     if (xmlCode.getElementsByTagName("parsererror").length > 0) {
-      response.status = "error";
-      return response;
+      console.log("[DEBUG] received malformed code chunk, attempting to repair it");
+      //response.status = "error";
+      //return response;
+      const handler = new htmlparser2.DomHandler((error, dom) => {
+        if (error) {
+          console.error("[DEBUG] Attempted to repair the code chunk, but failed to parse it", error);
+          response.status = "failedToParse";
+        } else {
+          // Serialize using dom-serializer
+          let fixedXML = domSerializer(dom); // Use the default export here
+          codeChunk = fixedXML.replace(/variabletype="removeAfter"/g, 'variabletype=""');
+          xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
+          console.log("[DEBUG] Successfully repaired the code chunk", codeChunk);
+        }
+      });
+      const parser = new htmlparser2.Parser(handler, { xmlMode: true });
+      let modifiedCodeChunk = codeChunk.replace(/variabletype=""/g, 'variabletype="removeAfter"');
+      parser.write(modifiedCodeChunk);
+      parser.end();
+    }else{
+      console.log("[DEBUG] received well formed code chunk");
     }
+    if(response.status == "failedToParse"){response.status = "error"; return response};
     while (xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
-      if(xmlCode.getElementsByTagName("variableCreationRequest")[0].getAttribute("type") == "broadcast_msg"){
+      if (xmlCode.getElementsByTagName("variableCreationRequest")[0].getAttribute("type") == "broadcast_msg") {
         response.broadcasts.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
-      }else{
+      } else {
         response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
       }
       //delete the variable creation request
@@ -181,8 +200,8 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     textareaa.focus();
 
     textareaa.value = inputValue;
-    
-    if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
+
+    if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = xmlParser.parseFromString(attachedFile, "text/html");
     document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
     return;
@@ -630,7 +649,7 @@ function popupFunctionality() {
                             var workspace = mainWorkspace;
                             var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                             //add the variables and lists that don't overlap
-                            var [listNames, variableNames,broadcastNames] = workspaceVariables(true);
+                            var [listNames, variableNames, broadcastNames] = workspaceVariables(true);
                             for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
                               if (!variableNames.includes(name)) {
                                 mainWorkspace.createVariable(name, "", null);
@@ -657,18 +676,18 @@ function popupFunctionality() {
                               });
                             }
 
-                            var totalWidth = 0;
+                            var totalHeight = 0;
                             //Blockly.Xml.domToWorkspace(xml, workspace);
                             Array.from(xml.children).forEach(block => {
                               const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
-                              const x = workspace.scrollX + totalWidth || 0;
-                              const y = workspace.scrollY || 0;
+                              const x = workspace.scrollX || 0;
+                              const y = workspace.scrollY + totalHeight || 0;
                               try {
                                 newBlock.moveBy(x, y);
                               } catch (e) {
                                 console.error("failed to move block", e);
                               }
-                              totalWidth += (newBlock.getBoundingRectangle().bottomRight.x - newBlock.getBoundingRectangle().topLeft.x) + 20;
+                              totalHeight += (newBlock.getBoundingRectangle().bottomRight.y - newBlock.getBoundingRectangle().topLeft.y) + 40;
                             });
                             mainWorkspace.refreshToolboxSelection_();
                             /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
@@ -816,7 +835,7 @@ function popupFunctionality() {
                 const animatedTextClass = Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text";
                 function updateMessageContents() {
                   var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code Block Preview will be available once Torchy finishes.</p></div>`);
-                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\""+animatedTextClass+"\">currently writing a code block</p></div>");
+                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
                   document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
@@ -824,7 +843,7 @@ function popupFunctionality() {
                 }
                 let instanceCount = 0;
                 if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
-                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\""+animatedTextClass+"\">currently writing a code block</p></div>")) {
+                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p></div>")) {
                     reader.read().then(processText);
                   } else {
                     updateMessageContents()
@@ -981,7 +1000,7 @@ export default async function ({ addon, console }) {
     if (detail.action.type === "scratch-gui/navigation/ACTIVATE_TAB") {
       const activeTabIndex = detail.action.activeTabIndex;
       //console.log(`Tab changed to index: ${activeTabIndex}`);
-      if(activeTabIndex != 0){
+      if (activeTabIndex != 0) {
         closePopup();
       }
     }
