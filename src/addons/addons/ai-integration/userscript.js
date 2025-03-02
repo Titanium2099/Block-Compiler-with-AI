@@ -54,13 +54,17 @@ function currentSpriteName() {
   return vm.runtime.getEditingTarget().sprite.name;
 }
 
-function workspaceVariables() {
+function workspaceVariables(includeBroadcast = false) {
   var workspace = mainWorkspace;
   var allVariables = workspace.getAllVariables(); // Get all variables
   var lists = allVariables.filter(variable => variable.type === "list");
   var listNames = lists.map(list => list.name);
   var variables = allVariables.filter(variable => variable.type === "");
   var variableNames = variables.map(variable => variable.name);
+  if (includeBroadcast) {
+    var broadcastNames = workspace.getAllVariables().filter(variable => variable.type === "broadcast_msg").map(variable => variable.name);
+    return [listNames, variableNames, broadcastNames];
+  }
   return [listNames, variableNames];
 }
 
@@ -98,6 +102,7 @@ async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
   let response = {
     "variables": [],
     "lists": [],
+    "broadcasts": [],
     "rawXML": codeChunk,
     "BlocksAsXML": "",
     "blocksAsSVG": "",
@@ -115,7 +120,11 @@ async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
       return response;
     }
     while (xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
-      response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
+      if(xmlCode.getElementsByTagName("variableCreationRequest")[0].getAttribute("type") == "broadcast_msg"){
+        response.broadcasts.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
+      }else{
+        response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
+      }
       //delete the variable creation request
       xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
     }
@@ -172,6 +181,8 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     textareaa.focus();
 
     textareaa.value = inputValue;
+    
+    if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = xmlParser.parseFromString(attachedFile, "text/html");
     document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
     return;
@@ -578,6 +589,7 @@ function popupFunctionality() {
                     for (let i = 0; i <= instanceCount; i++) { // each code block
                       try {
                         if (document.AI_INTEGRATION.processedCodeChunks[instanceCount].status == "error") {
+                          document.getElementById('currentlyBlabberingOnThis').id = '';
                           console.warn("DEBUG: skipping codeblock #" + instanceCount + " due to status failure", document.AI_INTEGRATION.processedCodeChunks[instanceCount])
                           return;
                         }
@@ -618,7 +630,7 @@ function popupFunctionality() {
                             var workspace = mainWorkspace;
                             var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                             //add the variables and lists that don't overlap
-                            var [listNames, variableNames] = workspaceVariables();
+                            var [listNames, variableNames,broadcastNames] = workspaceVariables(true);
                             for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
                               if (!variableNames.includes(name)) {
                                 mainWorkspace.createVariable(name, "", null);
@@ -629,7 +641,11 @@ function popupFunctionality() {
                                 mainWorkspace.createVariable(name, "list", null);
                               }
                             }
-
+                            for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].broadcasts) {
+                              if (!broadcastNames.includes(name)) {
+                                mainWorkspace.createVariable(name, "broadcast_msg", null);
+                              }
+                            }
                             if (replacingBlocksInternal.length > 0) {
                               mainWorkspace.getAllBlocks().forEach(block => {
                                 if (block.type == "procedures_definition") {
@@ -799,7 +815,7 @@ function popupFunctionality() {
 
                 const animatedTextClass = Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text";
                 function updateMessageContents() {
-                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code block is being processed...</p></div>`);
+                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code Block Preview will be available once Torchy finishes.</p></div>`);
                   edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\""+animatedTextClass+"\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
