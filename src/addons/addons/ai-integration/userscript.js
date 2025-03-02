@@ -668,7 +668,7 @@ function popupFunctionality() {
                               } catch (e) {
                                 console.error("failed to move block", e);
                               }
-                              totalWidth += newBlock.getBoundingRectangle().bottomRight.x + 20;
+                              totalWidth += (newBlock.getBoundingRectangle().bottomRight.x - newBlock.getBoundingRectangle().topLeft.x) + 20;
                             });
                             mainWorkspace.refreshToolboxSelection_();
                             /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
