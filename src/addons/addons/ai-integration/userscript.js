@@ -35,7 +35,21 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   errorsDetected: [],
 };
 
-const originalState = JSON.parse(JSON.stringify(document.AI_INTEGRATION));
+const originalState = {
+  AI_currently_blabbering: false,
+  currentInputHasAttachment: false,
+  attachmentDetails: {
+    attachmentText: "",
+    attachmentBlocks: "",
+  },
+  CodeChunks: [],
+  AllCodeChunksEverAdded: [],
+  processedCodeChunks: [],
+  chatHistory: [],
+  popupOpen: false,
+  canUse: true,
+  errorsDetected: [],
+};
 
 document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.X_COORDINATE = event.clientX;
@@ -676,18 +690,18 @@ function popupFunctionality() {
                               });
                             }
 
-                            var totalHeight = 0;
+                            var totalWidth = 0;
                             //Blockly.Xml.domToWorkspace(xml, workspace);
                             Array.from(xml.children).forEach(block => {
                               const newBlock = ScratchBlocks.Xml.domToBlock(block, workspace);
-                              const x = workspace.scrollX || 0;
-                              const y = workspace.scrollY + totalHeight || 0;
+                              const x = workspace.scrollX + totalWidth || 0;
+                              const y = workspace.scrollY || 0;
                               try {
                                 newBlock.moveBy(x, y);
                               } catch (e) {
                                 console.error("failed to move block", e);
                               }
-                              totalHeight += (newBlock.getBoundingRectangle().bottomRight.y - newBlock.getBoundingRectangle().topLeft.y) + 40;
+                              totalWidth += (newBlock.getBoundingRectangle().bottomRight.x - newBlock.getBoundingRectangle().topLeft.x) + 20;
                             });
                             mainWorkspace.refreshToolboxSelection_();
                             /*const newBlock = ScratchBlocks.Xml.domToBlock(xml, workspace);
@@ -910,6 +924,7 @@ export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
   //mainWorkspace = Blockly.getMainWorkspace();
   mainWorkspace = addon.tab.traps.getWorkspace();
+  window.AAA = mainWorkspace;
   blockParser.init(Blockly);
   authToken = addon.settings.get("GeminiAPIKey");
   Gaddon = addon;
