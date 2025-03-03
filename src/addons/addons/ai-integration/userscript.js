@@ -1,7 +1,6 @@
-import * as htmlparser2 from "htmlparser2";
-import domSerializer from "dom-serializer";
+import { handleRawCodeChunk } from "./codeChunkHandler.js";
 import GetSVG from "./parser.js";
-
+import helpers from "./helpers.js";
 
 const apiUrl = "http://127.0.0.1:5000";
 let authToken;
@@ -9,9 +8,6 @@ var converter;
 let Gaddon;
 const resistanceThreshold = 10;
 
-const xmlParser = new DOMParser();
-const xmlSerializer = new XMLSerializer();
-const blockParser = new GetSVG();
 var mainWorkspace;
 
 
@@ -51,146 +47,14 @@ const originalState = {
   errorsDetected: [],
 };
 
+Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
+  return mainWorkspace;
+}
+
 document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.X_COORDINATE = event.clientX;
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
-
-function closePopup() {
-  if (document.querySelector('.container') == null) return;
-  document.querySelector('.container').style.display = 'none';
-  document.querySelector('.container').style.zIndex = -999999;
-  document.AI_INTEGRATION.popupOpen = false;
-}
-
-function currentSpriteName() {
-  return vm.runtime.getEditingTarget().sprite.name;
-}
-
-function workspaceVariables(includeBroadcast = false) {
-  var workspace = mainWorkspace;
-  var allVariables = workspace.getAllVariables(); // Get all variables
-  var lists = allVariables.filter(variable => variable.type === "list");
-  var listNames = lists.map(list => list.name);
-  var variables = allVariables.filter(variable => variable.type === "");
-  var variableNames = variables.map(variable => variable.name);
-  if (includeBroadcast) {
-    var broadcastNames = workspace.getAllVariables().filter(variable => variable.type === "broadcast_msg").map(variable => variable.name);
-    return [listNames, variableNames, broadcastNames];
-  }
-  return [listNames, variableNames];
-}
-
-function getCustomBlockNames(xmlString) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-
-  const result = [];
-
-  // Find all blocks of type 'procedures_definition'
-  const blocks = xmlDoc.getElementsByTagName("block");
-
-  for (let block of blocks) {
-    if (block.getAttribute("type") === "procedures_definition") {
-      const blockId = block.getAttribute("id");
-
-      // Find all mutations related to this block
-      const mutations = block.getElementsByTagName("mutation");
-
-      for (let mutation of mutations) {
-        if (mutation.hasAttribute("proccode")) {
-          result.push({
-            blockId: blockId,
-            customBlockName: mutation.getAttribute("proccode")
-          });
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-async function handleRawCodeChunk(codeChunk, uniqueCommentID) {
-  let response = {
-    "variables": [],
-    "lists": [],
-    "broadcasts": [],
-    "rawXML": codeChunk,
-    "BlocksAsXML": "",
-    "blocksAsSVG": "",
-    "status": "success",
-    "overlappingVars": [],
-    "overlappingLists": [],
-    "uniqueCommentID": uniqueCommentID,
-  }
-  try {
-    codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
-    let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
-    //check if it successfully parsed
-    if (xmlCode.getElementsByTagName("parsererror").length > 0) {
-      console.log("[DEBUG] received malformed code chunk, attempting to repair it");
-      //response.status = "error";
-      //return response;
-      const handler = new htmlparser2.DomHandler((error, dom) => {
-        if (error) {
-          console.error("[DEBUG] Attempted to repair the code chunk, but failed to parse it", error);
-          response.status = "failedToParse";
-        } else {
-          // Serialize using dom-serializer
-          let fixedXML = domSerializer(dom); // Use the default export here
-          codeChunk = fixedXML.replace(/variabletype="removeAfter"/g, 'variabletype=""');
-          xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
-          console.log("[DEBUG] Successfully repaired the code chunk", codeChunk);
-        }
-      });
-      const parser = new htmlparser2.Parser(handler, { xmlMode: true });
-      let modifiedCodeChunk = codeChunk.replace(/variabletype=""/g, 'variabletype="removeAfter"');
-      parser.write(modifiedCodeChunk);
-      parser.end();
-    }else{
-      console.log("[DEBUG] received well formed code chunk");
-    }
-    if(response.status == "failedToParse"){response.status = "error"; return response};
-    while (xmlCode.getElementsByTagName("variableCreationRequest").length > 0) {
-      if (xmlCode.getElementsByTagName("variableCreationRequest")[0].getAttribute("type") == "broadcast_msg") {
-        response.broadcasts.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
-      } else {
-        response.variables.push(xmlCode.getElementsByTagName("variableCreationRequest")[0].textContent);
-      }
-      //delete the variable creation request
-      xmlCode.getElementsByTagName("variableCreationRequest")[0].remove();
-    }
-    while (xmlCode.getElementsByTagName("listCreationRequest").length > 0) {
-      response.lists.push(xmlCode.getElementsByTagName("listCreationRequest")[0].textContent);
-      //delete the list creation request
-      xmlCode.getElementsByTagName("listCreationRequest")[0].remove();
-    }
-    for (var x of response.variables) if (mainWorkspace.getVariable(x) != null) response.overlappingVars.push(x)
-    for (var x of response.lists) if (mainWorkspace.getVariable(x, "list") != null) response.overlappingLists.push(x)
-
-    response.BlocksAsXML = "<xml>" + xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "") + "</xml>";
-    response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML, uniqueCommentID);
-  } catch (e) {
-    console.error(e);
-    response.status = "error";
-  }
-  /* No longer needed as I now make a workspace for each parse
-  //due to the way that the code is parsed, the variables and lists are added to the workspace and we need to remove them (if they don't overlap)
-  response.variables.forEach(variable => {
-    if (!response.overlappingVars.includes(variable)) {
-      if (mainWorkspace.getVariable(variable) != null) mainWorkspace.deleteVariableById(mainWorkspace.getVariable(variable).getId())
-    }
-  });
-  response.lists.forEach(list => {
-    if (!response.overlappingLists.includes(list)) {
-      if (mainWorkspace.getVariable(list, "list") != null) mainWorkspace.deleteVariableById(mainWorkspace.getVariable(list, "list").getId())
-    }
-  });
-  */
-  return response;
-}
-
 
 function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
   if (document.AI_INTEGRATION.popupOpen) {
@@ -216,7 +80,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     textareaa.value = inputValue;
 
     if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
-    var parsedAttachFile = xmlParser.parseFromString(attachedFile, "text/html");
+    var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
     document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
     return;
   }
@@ -422,7 +286,7 @@ function popupFunctionality() {
   });
 
   document.getElementById('closePopup').addEventListener('click', () => {
-    closePopup();
+    helpers.closePopup();
   });
   document.getElementById('clearChat').addEventListener('click', () => {
     //prompt user if they are sure
@@ -576,7 +440,7 @@ function popupFunctionality() {
 
                     const processedChunks = await Promise.all(
                       document.AI_INTEGRATION.CodeChunks.map((chunk, index) =>
-                        handleRawCodeChunk(chunk, `${randomId}_${index}`)
+                        handleRawCodeChunk(chunk, `${randomId}_${index}`,mainWorkspace)
                       )
                     );
 
@@ -663,7 +527,7 @@ function popupFunctionality() {
                             var workspace = mainWorkspace;
                             var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                             //add the variables and lists that don't overlap
-                            var [listNames, variableNames, broadcastNames] = workspaceVariables(true);
+                            var [listNames, variableNames, broadcastNames] = helpers.workspaceVariables(true);
                             for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
                               if (!variableNames.includes(name)) {
                                 mainWorkspace.createVariable(name, "", null);
@@ -711,7 +575,7 @@ function popupFunctionality() {
                           }
                           var message = `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`;
 
-                          var [listNames, variableNames] = workspaceVariables();
+                          var [listNames, variableNames] = helpers.workspaceVariables();
                           var newVariables = [];
                           var newLists = [];
                           var existingVariables = [];
@@ -742,8 +606,8 @@ function popupFunctionality() {
                           if (existingLists.length > 0) {
                             message += `<li>Use ${existingLists.length} existing ${existingLists.length == 1 ? "list" : "lists"}: "${existingLists.join('", "')}"</li>`;
                           }
-                          var currentWorkspaceBlocks = getCustomBlockNames(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace)));
-                          var newBlocks = getCustomBlockNames(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
+                          var currentWorkspaceBlocks = helpers.getCustomBlockNames(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace)));
+                          var newBlocks = helpers.getCustomBlockNames(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                           //if their are overlapping ones give a warning
                           var replacingBlocks = [];
                           var replacingBlocksInternal = [];
@@ -925,7 +789,7 @@ export default async function ({ addon, console }) {
   //mainWorkspace = Blockly.getMainWorkspace();
   mainWorkspace = addon.tab.traps.getWorkspace();
   window.AAA = mainWorkspace;
-  blockParser.init(Blockly);
+  GetSVG.init(Blockly);
   authToken = addon.settings.get("GeminiAPIKey");
   Gaddon = addon;
   //create new CSS (style for popup)
@@ -942,7 +806,7 @@ export default async function ({ addon, console }) {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
       document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-      createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
+      createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
     });
     return;
   }
@@ -954,7 +818,7 @@ export default async function ({ addon, console }) {
         callback: () => {
           console.log("Explain this Sprite");
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-          createBasePopup(true, currentSpriteName() + " - Entire Sprite", "Explain this Sprite:");
+          createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "Explain this Sprite:");
         },
         separator: true,
       });
@@ -972,7 +836,7 @@ export default async function ({ addon, console }) {
           console.log(Blockly.Xml.blockToDom(block));
           console.log(Blockly.Xml.domToText(Blockly.Xml.blockToDom(block)));
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, currentSpriteName() + " - Code Block", "Explain this:");
+          createBasePopup(true, helpers.currentSpriteName() + " - Code Block", "Explain this:");
         },
         separator: true,
       });
@@ -988,7 +852,7 @@ export default async function ({ addon, console }) {
         callback: () => {
           console.log("Debug this code", block);
           document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, currentSpriteName() + " - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
+          createBasePopup(true, helpers.currentSpriteName() + " - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
         },
       });
       return items;
@@ -1016,13 +880,13 @@ export default async function ({ addon, console }) {
       const activeTabIndex = detail.action.activeTabIndex;
       //console.log(`Tab changed to index: ${activeTabIndex}`);
       if (activeTabIndex != 0) {
-        closePopup();
+        helpers.closePopup();
       }
     }
   });
 
   window.addEventListener('ai-button-clicked', function () {
     document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-    createBasePopup(true, currentSpriteName() + " - Entire Sprite", "");
+    createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
   });
 }

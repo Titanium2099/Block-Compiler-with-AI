@@ -55,7 +55,7 @@ class XMLWorkspaceRenderer {
       }
   }
 } 
-export default class GetSVG {
+export default class GetSVG { 
   constructor() {
     //this.blockXml = blockXml;
     this.exSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -63,8 +63,10 @@ export default class GetSVG {
     this.exSVG.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
     this.exSVG.setAttribute("version", "1.1");
   }
+
+  static Blockly;
   /*defineBlockly(Blockly) {
-    this.Blockly = Blockly;
+    Blockly = Blockly;
   }*/
   // Method to set CSS variables for the element
   setCSSVars(element) {
@@ -79,16 +81,16 @@ export default class GetSVG {
     let style = document.createElement("style");
     style.textContent = `
       .blocklyText {
-          fill: ${this.Blockly.Colours.text};
+          fill: ${Blockly.Colours.text};
           font-family: "Helvetica Neue", Helvetica, sans-serif;
           font-size: 12pt;
           font-weight: 500;
       }
       .blocklyNonEditableText>text, .blocklyEditableText>text {
-          fill: ${this.Blockly.Colours.textFieldText};
+          fill: ${Blockly.Colours.textFieldText};
       }
       .blocklyDropdownText {
-          fill: ${this.Blockly.Colours.text} !important;
+          fill: ${Blockly.Colours.text} !important;
       }
     `;
     for (let userstyle of document.querySelectorAll(".scratch-addons-style[data-addons*='editor-theme3']")) {
@@ -99,11 +101,11 @@ export default class GetSVG {
   }
 
   async getSVG(blockXml,uniqueCommentID) {
-    if (!this.Blockly) {
+    if (!Blockly) {
       console.error("Blockly is not initialized. Call init(Blockly) first.");
       return;
     }
-    this.blockXml = this.Blockly.Xml.textToDom(blockXml);
+    this.blockXml = Blockly.Xml.textToDom(blockXml);
 
     let workspace = new XMLWorkspaceRenderer(document.getElementById("parsingInjectionDiv")).workspace;
     // Store existing block IDs before adding new blocks
@@ -113,7 +115,7 @@ export default class GetSVG {
     var returnedData = "<div style=\"display: flex;flex-direction: column;\">";
 
     for (const blockXml of Array.from(this.blockXml.children)) {
-      let block = this.Blockly.Xml.domToBlock(blockXml, workspace,uniqueCommentID);
+      let block = Blockly.Xml.domToBlock(blockXml, workspace,uniqueCommentID);
       returnedData += await this.getSVG_internal(block);
   }
     returnedData += "</div>";
@@ -191,8 +193,8 @@ export default class GetSVG {
     );
   }
 
-  init(Blockly) {
-    this.Blockly = Blockly;
+  static init(FullBlockly) {
+    Blockly = FullBlockly;
     var div = document.createElement("div");
     div.id = "parsingInjectionDiv";
     //div.style.display = "none"; //messes up the SVG rendering 
