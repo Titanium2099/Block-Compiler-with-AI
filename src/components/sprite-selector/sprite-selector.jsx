@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, injectIntl, intlShape} from 'react-intl';
+import { defineMessages, injectIntl, intlShape } from 'react-intl';
 
 import Box from '../box/box.jsx';
 import SpriteInfo from '../../containers/sprite-info.jsx';
 import SpriteList from './sprite-list.jsx';
 import ActionMenu from '../action-menu/action-menu.jsx';
-import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
-import {isRtl} from '@turbowarp/scratch-l10n';
+import { STAGE_DISPLAY_SIZES } from '../../lib/layout-constants';
+import { isRtl } from '@turbowarp/scratch-l10n';
 
 import styles from './sprite-selector.css';
 
@@ -17,7 +17,9 @@ import spriteIcon from '../action-menu/icon--sprite.svg';
 import surpriseIcon from '../action-menu/icon--surprise.svg';
 import searchIcon from '../action-menu/icon--search.svg';
 import AIIcon from '../action-menu/icon--AI.svg';
-  
+
+import { enableGenerate } from '../../lib/brand';
+
 const messages = defineMessages({
     addSpriteFromLibrary: {
         id: 'gui.spriteSelector.addSpriteFromLibrary',
@@ -143,11 +145,15 @@ const SpriteSelectorComponent = function (props) {
                         title: intl.formatMessage(messages.addSpriteFromLibrary),
                         img: searchIcon,
                         onClick: onNewSpriteClick
-                    }, {
-                        title: intl.formatMessage(messages.addSpriteFromAI),
-                        img: AIIcon,
-                        onClick: onAIClick
-                    }
+                    }, 
+                    ...(enableGenerate
+                        ? [{
+                            title: intl.formatMessage(messages.addSpriteFromAI),
+                            img: AIIcon,
+                            onClick: onAIClick
+                        }]
+                        : []
+                    )
                 ]}
                 title={intl.formatMessage(messages.addSpriteFromLibrary)}
                 tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
