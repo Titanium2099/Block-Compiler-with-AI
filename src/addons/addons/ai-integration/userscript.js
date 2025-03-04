@@ -30,6 +30,7 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   popupOpen: false,
   canUse: true,
   errorsDetected: [],
+  AIModels: [],
 };
 
 const originalState = {
@@ -82,7 +83,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
     if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
-    document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
+    document.getElementById("bottomBar").appendChild(parsedAttachFile.body.children[0]);
     helpers.removeAttachmentListener();
     return;
   }
@@ -181,7 +182,23 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
               </defs>
           </svg>
       </div>
-      ${attachedFile}
+      <div class="bottomBar" id="bottomBar">
+        <div class="AI_selector">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6 svg">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h9v9h-9v-9Z">
+            </path>
+          </svg>
+          <select name="AI Model Selector" id="AI_Selector_select">
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6 arrow">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+          </svg>
+        </div>
+        ${attachedFile}
+      </div>
   </div>`;
 
   let offsetX, offsetY, isDragging = false, startX, startY, hasMoved = false;
@@ -273,6 +290,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 function popupFunctionality() {
   helpers.removeAttachmentListener();
+  helpers.updateAIModels();
 
   document.getElementById('closePopup').addEventListener('click', () => {
     helpers.closePopup();
@@ -384,6 +402,7 @@ function popupFunctionality() {
         api_key: authToken,
         message: messageContents,
         history: document.AI_INTEGRATION.chatHistory,
+        ai_model: document.getElementById('AI_Selector_select').value,
       };
       function fetchWithTimeout(url, options = {}, timeout = 5000) {
         const controller = new AbortController();
@@ -812,6 +831,29 @@ export default async function ({ addon, console }) {
       createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
     });
     return;
+  }else{
+    //fetch apiUrl + "/AI_models"
+    fetch(apiUrl + "/AI_models", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          console.error('Error:', response.statusText);
+          return [];
+        }
+      })
+      .then(data => {
+        document.AI_INTEGRATION.AIModels = data;
+        helpers.updateAIModels();
+      })
+      .catch(error => {
+        console.error('Request failed', error);
+      });
   }
   addon.tab.createBlockContextMenu(
     (items) => {

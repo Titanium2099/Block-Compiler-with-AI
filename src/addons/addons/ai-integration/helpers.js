@@ -59,4 +59,16 @@ export default class helpers {
             document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
         });
     }
+    static updateAIModels() {
+        if(document.getElementById('AI_Selector_select') == null) return;
+        for (var i of document.AI_INTEGRATION.AIModels) {
+            var option = document.createElement('option');
+            option.value = i.id;
+            option.text = i.display_name;
+            if (i.default) {
+                option.selected = true;
+            }
+            document.getElementById('AI_Selector_select').appendChild(option);
+        }
+    }
 }
