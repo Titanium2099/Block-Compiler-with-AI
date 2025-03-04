@@ -322,27 +322,45 @@ function popupFunctionality() {
       document.getElementById('attachedFile').remove();
       var userMessage = document.createElement('div');
       userMessage.className = 'user-message';
-      userMessage.innerHTML = `
-                <div class="message">
-                    <span>${input.value}</span>
-                    <span>
-                        <div class="FileAttachment">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="svg">
-                                <path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentcolor"></path>
-                            </svg>
-                            <p class="p">${document.AI_INTEGRATION.attachmentDetails.attachmentText}</p>
-
-                        </div>
-                    </span>
-                </div>
-                `;
+      var messageDiv = document.createElement('div');
+      messageDiv.className = 'message';
+      var textSpan = document.createElement('span');
+      textSpan.textContent = input.value;
+      messageDiv.appendChild(textSpan);
+      var fileAttachmentDiv = document.createElement('div');
+      fileAttachmentDiv.className = 'FileAttachment';
+      var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svgElement.setAttribute("width", "24");
+      svgElement.setAttribute("height", "24");
+      svgElement.setAttribute("viewBox", "0 0 24 24");
+      svgElement.setAttribute("fill", "none");
+      svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      svgElement.classList.add("svg");
+      var pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathElement.setAttribute("d", "M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z");
+      pathElement.setAttribute("stroke-linecap", "round");
+      pathElement.setAttribute("stroke-linejoin", "round");
+      pathElement.setAttribute("stroke-width", "2");
+      pathElement.setAttribute("stroke", "currentcolor");
+      svgElement.appendChild(pathElement);
+      var attachmentText = document.createElement('p');
+      attachmentText.className = 'p';
+      attachmentText.textContent = document.AI_INTEGRATION.attachmentDetails.attachmentText;
+      fileAttachmentDiv.appendChild(svgElement);
+      fileAttachmentDiv.appendChild(attachmentText);
+      messageDiv.appendChild(fileAttachmentDiv);
+      userMessage.appendChild(messageDiv);      
       document.getElementById('chat_content').appendChild(userMessage);
     } else {
       var userMessage = document.createElement('div');
       userMessage.className = 'user-message';
-      userMessage.innerHTML = `
-          <div class="message">${input.value}</div>
-      `;
+      //userMessage.innerHTML = `
+      //    <div class="message">${input.value}</div>
+      //`;
+      var message = document.createElement('div');
+      message.className = 'message';
+      message.innerText = input.value;
+      userMessage.appendChild(message);
       document.getElementById('chat_content').appendChild(userMessage);
     }
     var customNames = "";
