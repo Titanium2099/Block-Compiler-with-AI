@@ -302,7 +302,7 @@ function popupFunctionality() {
   });
   //add send command for enter + shift
   document.getElementById('auto-resizing-textarea').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       internal();
     }
