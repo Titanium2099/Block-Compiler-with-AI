@@ -1,10 +1,11 @@
 import { handleRawCodeChunk } from "./codeChunkHandler.js";
 import GetSVG from "./parser.js";
 import helpers from "./helpers.js";
+import showdown from "showdown";
 
 const apiUrl = "http://127.0.0.1:5000";
 let authToken;
-var converter;
+const converter = new showdown.Converter();
 let Gaddon;
 const resistanceThreshold = 10;
 
@@ -82,6 +83,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
     document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
+    helpers.removeAttachmentListener();
     return;
   }
   //create new blob
@@ -270,20 +272,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 
 function popupFunctionality() {
-  function defineShowdown() {
-    if (typeof showdown != "undefined") {
-      converter = new showdown.Converter();
-    } else {
-      setTimeout(defineShowdown, 10);
-    }
-  }
-  defineShowdown();
-  document.getElementById('removeAttachement').addEventListener('click', () => {
-    document.getElementById('attachedFile').remove();
-    document.AI_INTEGRATION.currentInputHasAttachment = false;
-    document.AI_INTEGRATION.attachmentDetails.attachmentText = "";
-    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
-  });
+  helpers.removeAttachmentListener();
 
   document.getElementById('closePopup').addEventListener('click', () => {
     helpers.closePopup();
@@ -545,7 +534,7 @@ function popupFunctionality() {
                             var workspace = mainWorkspace;
                             var xml = Blockly.Xml.textToDom(document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].BlocksAsXML);
                             //add the variables and lists that don't overlap
-                            var [listNames, variableNames, broadcastNames] = helpers.workspaceVariables(true);
+                            var [listNames, variableNames, broadcastNames] = helpers.workspaceVariables(true,mainWorkspace);
                             for (var name of document.AI_INTEGRATION.AllCodeChunksEverAdded[element.getAttribute("uniqueid") - 1].variables) {
                               if (!variableNames.includes(name)) {
                                 mainWorkspace.createVariable(name, "", null);
@@ -593,7 +582,7 @@ function popupFunctionality() {
                           }
                           var message = `<p style="font-weight: 900;margin-bottom: 10px;">Adding this code will:</p><ul>`;
 
-                          var [listNames, variableNames] = helpers.workspaceVariables();
+                          var [listNames, variableNames] = helpers.workspaceVariables(false,mainWorkspace);
                           var newVariables = [];
                           var newLists = [];
                           var existingVariables = [];
@@ -730,7 +719,7 @@ function popupFunctionality() {
 
                 const animatedTextClass = Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text";
                 function updateMessageContents() {
-                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Code Block Preview will be available once Torchy finishes.</p></div>`);
+                  var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Currently Processing Code Block</p></div>`);
                   edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
@@ -815,10 +804,6 @@ export default async function ({ addon, console }) {
   style.setAttribute('rel', 'stylesheet');
   style.setAttribute('href', apiUrl + '/main.css');
   document.head.appendChild(style);
-
-  const js = document.createElement('script');
-  js.src = "https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js";
-  document.head.appendChild(js);
 
   if (authToken === "") {
     document.AI_INTEGRATION.canUse = false;

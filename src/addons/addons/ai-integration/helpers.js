@@ -10,8 +10,7 @@ export default class helpers {
     static currentSpriteName() {
         return vm.runtime.getEditingTarget().sprite.name;
     }
-    static workspaceVariables(includeBroadcast = false) {
-        var workspace = mainWorkspace;
+    static workspaceVariables(includeBroadcast = false, workspace) {
         var allVariables = workspace.getAllVariables(); // Get all variables
         var lists = allVariables.filter(variable => variable.type === "list");
         var listNames = lists.map(list => list.name);
@@ -51,5 +50,13 @@ export default class helpers {
         }
 
         return result;
+    }
+    static removeAttachmentListener() {
+        document.getElementById('removeAttachement').addEventListener('click', () => {
+            document.getElementById('attachedFile').remove();
+            document.AI_INTEGRATION.currentInputHasAttachment = false;
+            document.AI_INTEGRATION.attachmentDetails.attachmentText = "";
+            document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
+        });
     }
 }
