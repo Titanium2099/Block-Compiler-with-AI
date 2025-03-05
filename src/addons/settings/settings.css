@@ -378,7 +378,7 @@ a:active, a:focus {
 }
 
 .description {
-
+white-space: pre-line;
 }
 
 .notice {
