@@ -290,7 +290,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 function popupFunctionality() {
   helpers.removeAttachmentListener();
-  helpers.updateAIModels();
+  helpers.updateAIModels(authToken.gemini, authToken.openrouter);
 
   document.getElementById('closePopup').addEventListener('click', () => {
     helpers.closePopup();
@@ -873,7 +873,7 @@ export default async function ({ addon, console }) {
       })
       .then(data => {
         document.AI_INTEGRATION.AIModels = data;
-        helpers.updateAIModels();
+        helpers.updateAIModels(authToken.gemini, authToken.openrouter);
       })
       .catch(error => {
         console.error('Request failed', error);

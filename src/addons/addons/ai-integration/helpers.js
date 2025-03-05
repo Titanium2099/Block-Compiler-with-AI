@@ -59,16 +59,22 @@ export default class helpers {
             document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
         });
     }
-    static updateAIModels() {
-        if(document.getElementById('AI_Selector_select') == null) return;
+    static updateAIModels(geminiKey, openrouterKey) {
+        if (document.getElementById('AI_Selector_select') == null) return;
         for (var i of document.AI_INTEGRATION.AIModels) {
+            const canUse = !(i.API_KEY_TYPE == "gemini" && geminiKey == "" || i.API_KEY_TYPE == "openrouter" && openrouterKey == "");
+
             var option = document.createElement('option');
             option.value = i.id;
-            option.text = i.display_name;
-            if (i.default) {
+            option.text = i.display_name + (canUse ? "" : " (API Key Required)");
+            if (i.default && canUse) {
                 option.selected = true;
             }
+            if (!canUse) {
+                option.disabled = true;
+            }
             document.getElementById('AI_Selector_select').appendChild(option);
+
         }
     }
 }

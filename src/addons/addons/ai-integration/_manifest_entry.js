@@ -10,12 +10,6 @@ const manifest = {
       "id": "warning"
     }
   ],
-  "credits": [
-    {
-      "name": "CodeTorch"
-    }
-  ],
-
   "userscripts": [
     {
       "url": "userscript.js"
