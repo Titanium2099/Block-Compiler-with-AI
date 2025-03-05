@@ -4,7 +4,7 @@ import helpers from "./helpers.js";
 import showdown from "showdown";
 
 const apiUrl = "http://127.0.0.1:5000";
-let authToken;
+let authToken = {};
 const converter = new showdown.Converter();
 let Gaddon;
 const resistanceThreshold = 10;
@@ -398,8 +398,26 @@ function popupFunctionality() {
       document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
       document.AI_INTEGRATION.CodeChunks = [];
 
+      var authTokenToUse = "";
+      for(var i of document.AI_INTEGRATION.AIModels){
+        if(i.id == document.getElementById('AI_Selector_select').value){
+          authTokenToUse = i.API_KEY_TYPE;
+        }
+      }
+      if(authTokenToUse == ""){
+        console.error("No API Key found for the selected AI Model");
+        return;
+      }
+      if(authTokenToUse == "gemini"){
+        authTokenToUse = authToken.gemini;
+      }else if(authTokenToUse == "openrouter"){
+        authTokenToUse = authToken.openrouter;
+      }else{
+        console.error("Invalid API Key Type");
+        return;
+      }
       var data = {
-        api_key: authToken,
+        api_key: authTokenToUse,
         message: messageContents,
         history: document.AI_INTEGRATION.chatHistory,
         ai_model: document.getElementById('AI_Selector_select').value,
@@ -821,7 +839,8 @@ export default async function ({ addon, console }) {
   mainWorkspace = addon.tab.traps.getWorkspace();
   window.AAA = mainWorkspace;
   GetSVG.init(Blockly);
-  authToken = addon.settings.get("GeminiAPIKey");
+  authToken.gemini = addon.settings.get("GeminiAPIKey");
+  authToken.openrouter = addon.settings.get("OpenRouterAPIKey");
   Gaddon = addon;
   //create new CSS (style for popup)
   const style = document.createElement('link');
@@ -829,7 +848,7 @@ export default async function ({ addon, console }) {
   style.setAttribute('href', apiUrl + '/main.css');
   document.head.appendChild(style);
 
-  if (authToken === "") {
+  if (authToken.gemini == "" && authToken.openrouter == "") {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
       document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));

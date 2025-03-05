@@ -27,6 +27,12 @@ const manifest = {
       "name": "Gemini API Key",
       "type": "long_string",
       "default": "",
+    },
+    {
+      "id": "OpenRouterAPIKey",
+      "name": "OpenRouter API Key",
+      "type": "long_string",
+      "default": "",
     }
   ],
   "dynamicDisable": true,
