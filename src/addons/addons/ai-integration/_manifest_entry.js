@@ -3,19 +3,13 @@ const manifest = {
   "editorOnly": true,
   "noTranslations": true,
   "name": "AI integration into the editor",
-  "description": "Adds AI integration into the editor including code completion, code generation, sprite generation, background generation, and more.",
+  "description": "Adds AI integration into the editor including code completion, code generation, sprite generation, background generation, and more.\n\n\nDISCLAIMER: We do not store any request data or your API keys. Your API keys are only sent with requests and remain fully stored locally on your computer. All models we use are free, ensuring no charges apply. However, for added security, we recommend setting restrictions on your API keys. If you'd like to verify this, our AI backend is open-source—feel free to check it out yourself!",
   "info": [
     {
-      "text": "You must have a Gemini API key to use the AI features. To get one, visit https://aistudio.google.com/app/apikey -> new key -> copy the key and paste it into the box below.",
+      "text": "If you need help with creating an API key, check out our guide here: https://blog.codetorch.net/gemini-api-key-for-torchy/",
       "id": "warning"
     }
   ],
-  "credits": [
-    {
-      "name": "CodeTorch"
-    }
-  ],
-
   "userscripts": [
     {
       "url": "userscript.js"
@@ -25,6 +19,12 @@ const manifest = {
     {
       "id": "GeminiAPIKey",
       "name": "Gemini API Key",
+      "type": "long_string",
+      "default": "",
+    },
+    {
+      "id": "OpenRouterAPIKey",
+      "name": "OpenRouter API Key",
       "type": "long_string",
       "default": "",
     }

@@ -59,4 +59,28 @@ export default class helpers {
             document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
         });
     }
+    static updateAIModels(geminiKey, openrouterKey) {
+        if (document.getElementById('AI_Selector_select') == null) return;
+        for (var i of document.AI_INTEGRATION.AIModels) {
+            const canUse = !(i.API_KEY_TYPE == "gemini" && geminiKey == "" || i.API_KEY_TYPE == "openrouter" && openrouterKey == "");
+
+            var option = document.createElement('option');
+            option.value = i.id;
+            option.text = i.display_name + (canUse ? "" : " (API Key Required)");
+            if (i.default && canUse) {
+                option.selected = true;
+            }
+            if (!canUse) {
+                option.disabled = true;
+            }
+            document.getElementById('AI_Selector_select').appendChild(option);
+
+        }
+        document.getElementById('infoAboutAIModels').addEventListener('click', () => {
+            ScratchBlocks.prompt(`<p>Each AI model has its own advantages and disadvantages</p><ul><li><strong>Gemini 2.0 Pro</strong> (requires Gemini API key): Excellent at explaining code but frequently makes mistakes when writing it.</li><li><strong>Gemini 2.0 Flash (recommended)</strong> (requires Gemini API key): The most tested model for writing code, offering reliable performance.</li><li><strong>Deepseek R1</strong> (requires OpenRouter API key): Poor at writing code but excels at explaining and analyzing issues. However, it has a very slow response time.</li><li><strong>Deepseek V3</strong> (requires OpenRouter API key): The best model for writing code, but limited to 200 messages per day.</li></ul>`, null, function(){}, "AI Models", ScratchBlocks.BROADCAST_MESSAGE_VARIABLE_TYPE, true);
+            setTimeout(() => {
+                document.querySelector(".ReactModal__Content--after-open").style.width = "700px";
+            }, 100);
+        });
+    }
 }

@@ -4,7 +4,7 @@ import helpers from "./helpers.js";
 import showdown from "showdown";
 
 const apiUrl = "http://127.0.0.1:5000";
-let authToken;
+let authToken = {};
 const converter = new showdown.Converter();
 let Gaddon;
 const resistanceThreshold = 10;
@@ -30,6 +30,7 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   popupOpen: false,
   canUse: true,
   errorsDetected: [],
+  AIModels: [],
 };
 
 const originalState = {
@@ -82,7 +83,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
     if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
-    document.getElementById("chat_box").appendChild(parsedAttachFile.body.children[0]);
+    document.getElementById("bottomBar").appendChild(parsedAttachFile.body.children[0]);
     helpers.removeAttachmentListener();
     return;
   }
@@ -181,7 +182,26 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
               </defs>
           </svg>
       </div>
-      ${attachedFile}
+      <div class="bottomBar" id="bottomBar">
+        <div class="AI_selector">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6 svg">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h9v9h-9v-9Z">
+            </path>
+          </svg>
+          <select name="AI Model Selector" id="AI_Selector_select">
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6 arrow">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" id="infoAboutAIModels" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"></path>
+        </svg>
+        </div>
+        ${attachedFile}
+      </div>
   </div>`;
 
   let offsetX, offsetY, isDragging = false, startX, startY, hasMoved = false;
@@ -273,6 +293,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
 function popupFunctionality() {
   helpers.removeAttachmentListener();
+  helpers.updateAIModels(authToken.gemini, authToken.openrouter);
 
   document.getElementById('closePopup').addEventListener('click', () => {
     helpers.closePopup();
@@ -380,10 +401,29 @@ function popupFunctionality() {
       document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
       document.AI_INTEGRATION.CodeChunks = [];
 
+      var authTokenToUse = "";
+      for(var i of document.AI_INTEGRATION.AIModels){
+        if(i.id == document.getElementById('AI_Selector_select').value){
+          authTokenToUse = i.API_KEY_TYPE;
+        }
+      }
+      if(authTokenToUse == ""){
+        console.error("No API Key found for the selected AI Model");
+        return;
+      }
+      if(authTokenToUse == "gemini"){
+        authTokenToUse = authToken.gemini;
+      }else if(authTokenToUse == "openrouter"){
+        authTokenToUse = authToken.openrouter;
+      }else{
+        console.error("Invalid API Key Type");
+        return;
+      }
       var data = {
-        api_key: authToken,
+        api_key: authTokenToUse,
         message: messageContents,
         history: document.AI_INTEGRATION.chatHistory,
+        ai_model: document.getElementById('AI_Selector_select').value,
       };
       function fetchWithTimeout(url, options = {}, timeout = 5000) {
         const controller = new AbortController();
@@ -417,12 +457,12 @@ function popupFunctionality() {
             }
             var aiMessage = document.createElement('div');
             aiMessage.className = 'ai-message';
-            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
+            aiMessage.innerHTML = `<p class="message `+(Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text")+`" id="currentlyBlabberingOnThis">loading...</p>`;
             document.getElementById('chat_content').appendChild(aiMessage);
 
             const domParser = new DOMParser();
             // Stream the response
-            const TIMEOUT_MS = 5000; // 5 seconds timeout read
+            const TIMEOUT_MS = 60000; // 30 second timeout 
             function readWithTimeout(reader) {
               return Promise.race([
                 reader.read(),
@@ -707,6 +747,7 @@ function popupFunctionality() {
                         console.log(e);
                       }
                     }
+                    document.getElementById('currentlyBlabberingOnThis').className = 'message';
                     document.getElementById('currentlyBlabberingOnThis').id = '';
                   }
                   processAndRenderCodeChunks();
@@ -714,6 +755,7 @@ function popupFunctionality() {
                   return;
 
                 }
+                document.getElementById('currentlyBlabberingOnThis').className = 'message';
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
 
@@ -742,6 +784,7 @@ function popupFunctionality() {
                 document.AI_INTEGRATION.AI_currently_blabbering = false;
                 if (document.getElementById('currentlyBlabberingOnThis') != null) {
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+                  document.getElementById('currentlyBlabberingOnThis').className = 'message';
                 } else {
                   document.getElementById('AI_is_thinking_what_to_blabber').remove();
                   if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -758,6 +801,7 @@ function popupFunctionality() {
             document.AI_INTEGRATION.AI_currently_blabbering = false;
             if (document.getElementById('currentlyBlabberingOnThis') != null) {
               document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+              document.getElementById('currentlyBlabberingOnThis').className = 'message';
             } else {
               document.getElementById('AI_is_thinking_what_to_blabber').remove();
               if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -775,6 +819,7 @@ function popupFunctionality() {
           document.AI_INTEGRATION.AI_currently_blabbering = false;
           if (document.getElementById('currentlyBlabberingOnThis') != null) {
             document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+            document.getElementById('currentlyBlabberingOnThis').className = 'message';
           } else {
             document.getElementById('AI_is_thinking_what_to_blabber').remove();
             if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -797,7 +842,8 @@ export default async function ({ addon, console }) {
   mainWorkspace = addon.tab.traps.getWorkspace();
   window.AAA = mainWorkspace;
   GetSVG.init(Blockly);
-  authToken = addon.settings.get("GeminiAPIKey");
+  authToken.gemini = addon.settings.get("GeminiAPIKey");
+  authToken.openrouter = addon.settings.get("OpenRouterAPIKey");
   Gaddon = addon;
   //create new CSS (style for popup)
   const style = document.createElement('link');
@@ -805,13 +851,36 @@ export default async function ({ addon, console }) {
   style.setAttribute('href', apiUrl + '/main.css');
   document.head.appendChild(style);
 
-  if (authToken === "") {
+  if (authToken.gemini == "" && authToken.openrouter == "") {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
       document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
       createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
     });
     return;
+  }else{
+    //fetch apiUrl + "/AI_models"
+    fetch(apiUrl + "/AI_models", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          console.error('Error:', response.statusText);
+          return [];
+        }
+      })
+      .then(data => {
+        document.AI_INTEGRATION.AIModels = data;
+        helpers.updateAIModels(authToken.gemini, authToken.openrouter);
+      })
+      .catch(error => {
+        console.error('Request failed', error);
+      });
   }
   addon.tab.createBlockContextMenu(
     (items) => {
