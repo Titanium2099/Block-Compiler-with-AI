@@ -436,12 +436,12 @@ function popupFunctionality() {
             }
             var aiMessage = document.createElement('div');
             aiMessage.className = 'ai-message';
-            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis">loading</p>`;
+            aiMessage.innerHTML = `<p class="message `+(Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text")+`" id="currentlyBlabberingOnThis">loading...</p>`;
             document.getElementById('chat_content').appendChild(aiMessage);
 
             const domParser = new DOMParser();
             // Stream the response
-            const TIMEOUT_MS = 5000; // 5 seconds timeout read
+            const TIMEOUT_MS = 60000; // 30 second timeout 
             function readWithTimeout(reader) {
               return Promise.race([
                 reader.read(),
@@ -726,6 +726,7 @@ function popupFunctionality() {
                         console.log(e);
                       }
                     }
+                    document.getElementById('currentlyBlabberingOnThis').className = 'message';
                     document.getElementById('currentlyBlabberingOnThis').id = '';
                   }
                   processAndRenderCodeChunks();
@@ -733,6 +734,7 @@ function popupFunctionality() {
                   return;
 
                 }
+                document.getElementById('currentlyBlabberingOnThis').className = 'message';
                 // Decode the chunk and append to the stream result
                 streamResult += decoder.decode(value, { stream: true });
 
@@ -761,6 +763,7 @@ function popupFunctionality() {
                 document.AI_INTEGRATION.AI_currently_blabbering = false;
                 if (document.getElementById('currentlyBlabberingOnThis') != null) {
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+                  document.getElementById('currentlyBlabberingOnThis').className = 'message';
                 } else {
                   document.getElementById('AI_is_thinking_what_to_blabber').remove();
                   if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -777,6 +780,7 @@ function popupFunctionality() {
             document.AI_INTEGRATION.AI_currently_blabbering = false;
             if (document.getElementById('currentlyBlabberingOnThis') != null) {
               document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+              document.getElementById('currentlyBlabberingOnThis').className = 'message';
             } else {
               document.getElementById('AI_is_thinking_what_to_blabber').remove();
               if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
@@ -794,6 +798,7 @@ function popupFunctionality() {
           document.AI_INTEGRATION.AI_currently_blabbering = false;
           if (document.getElementById('currentlyBlabberingOnThis') != null) {
             document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
+            document.getElementById('currentlyBlabberingOnThis').className = 'message';
           } else {
             document.getElementById('AI_is_thinking_what_to_blabber').remove();
             if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
