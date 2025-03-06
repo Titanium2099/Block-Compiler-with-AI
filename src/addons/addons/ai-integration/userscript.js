@@ -47,8 +47,8 @@ const originalState = {
   popupOpen: false,
   canUse: true,
   errorsDetected: [],
+  AIModels: [],
 };
-
 Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
   return mainWorkspace;
 }
@@ -304,6 +304,7 @@ function popupFunctionality() {
       while (document.getElementById('chat_content').children.length > 1) {
         document.getElementById('chat_content').children[1].remove();
       }
+      if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
       document.AI_INTEGRATION = originalState;
     }
   });
@@ -425,18 +426,8 @@ function popupFunctionality() {
         history: document.AI_INTEGRATION.chatHistory,
         ai_model: document.getElementById('AI_Selector_select').value,
       };
-      function fetchWithTimeout(url, options = {}, timeout = 5000) {
-        const controller = new AbortController();
-        const signal = controller.signal;
-        const fetchPromise = fetch(url, { ...options, signal });
 
-        // Set timeout to abort fetch
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-        return fetchPromise
-          .finally(() => clearTimeout(timeoutId));
-      }
-      fetchWithTimeout(apiUrl + "/chat", {
+      helpers.fetchWithTimeout(apiUrl + "/chat", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -447,7 +438,6 @@ function popupFunctionality() {
           if (response.ok) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let done = false;
             let streamResult = '';
 
             //remove the loading dots
@@ -461,17 +451,8 @@ function popupFunctionality() {
             document.getElementById('chat_content').appendChild(aiMessage);
 
             const domParser = new DOMParser();
-            // Stream the response
-            const TIMEOUT_MS = 60000; // 30 second timeout 
-            function readWithTimeout(reader) {
-              return Promise.race([
-                reader.read(),
-                new Promise((_, reject) =>
-                  setTimeout(() => reject(new Error("Read operation timed out")), TIMEOUT_MS)
-                ),
-              ]);
-            }
-            readWithTimeout(reader)
+            helpers.isFirstRequest = true;                     
+            helpers.readWithTimeout(reader)
               .then(function processText({ done, value }) {
                 if (done) {
 
@@ -781,55 +762,16 @@ function popupFunctionality() {
               })
               .catch(error => {
                 console.error("Error reading:", error);
-                document.AI_INTEGRATION.AI_currently_blabbering = false;
-                if (document.getElementById('currentlyBlabberingOnThis') != null) {
-                  document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
-                  document.getElementById('currentlyBlabberingOnThis').className = 'message';
-                } else {
-                  document.getElementById('AI_is_thinking_what_to_blabber').remove();
-                  if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
-                    document.getElementById("currentlyBlabberingOnThis").remove();
-                  }
-                  var aiMessage = document.createElement('div');
-                  aiMessage.className = 'ai-message';
-                  aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
-                  document.getElementById('chat_content').appendChild(aiMessage);
-                }
+                helpers.messageErrorOccured(messageContents);
               });
           } else {
             console.error('Error:', response.statusText);
-            document.AI_INTEGRATION.AI_currently_blabbering = false;
-            if (document.getElementById('currentlyBlabberingOnThis') != null) {
-              document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
-              document.getElementById('currentlyBlabberingOnThis').className = 'message';
-            } else {
-              document.getElementById('AI_is_thinking_what_to_blabber').remove();
-              if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
-                document.getElementById("currentlyBlabberingOnThis").remove();
-              }
-              var aiMessage = document.createElement('div');
-              aiMessage.className = 'ai-message';
-              aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
-              document.getElementById('chat_content').appendChild(aiMessage);
-            }
+            helpers.messageErrorOccured(messageContents);
           }
         })
         .catch(error => {
           console.error('Request failed', error);
-          document.AI_INTEGRATION.AI_currently_blabbering = false;
-          if (document.getElementById('currentlyBlabberingOnThis') != null) {
-            document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";
-            document.getElementById('currentlyBlabberingOnThis').className = 'message';
-          } else {
-            document.getElementById('AI_is_thinking_what_to_blabber').remove();
-            if (document.getElementById("currentlyBlabberingOnThis") != null) { //fixes a glitch
-              document.getElementById("currentlyBlabberingOnThis").remove();
-            }
-            var aiMessage = document.createElement('div');
-            aiMessage.className = 'ai-message';
-            aiMessage.innerHTML = `<p class="message" id="currentlyBlabberingOnThis" class=\"errorMessage\">Error reading response</p>`;
-            document.getElementById('chat_content').appendChild(aiMessage);
-          }
+          helpers.messageErrorOccured(messageContents);
         });
     }
     requestChat(messageContents);
@@ -876,6 +818,7 @@ export default async function ({ addon, console }) {
       })
       .then(data => {
         document.AI_INTEGRATION.AIModels = data;
+        originalState.AIModels = data;
         helpers.updateAIModels(authToken.gemini, authToken.openrouter);
       })
       .catch(error => {
