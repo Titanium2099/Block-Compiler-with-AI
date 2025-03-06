@@ -33,22 +33,7 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   AIModels: [],
 };
 
-const originalState = {
-  AI_currently_blabbering: false,
-  currentInputHasAttachment: false,
-  attachmentDetails: {
-    attachmentText: "",
-    attachmentBlocks: "",
-  },
-  CodeChunks: [],
-  AllCodeChunksEverAdded: [],
-  processedCodeChunks: [],
-  chatHistory: [],
-  popupOpen: false,
-  canUse: true,
-  errorsDetected: [],
-  AIModels: [],
-};
+const originalState = JSON.parse(JSON.stringify(document.AI_INTEGRATION));
 Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
   return mainWorkspace;
 }
@@ -305,7 +290,7 @@ function popupFunctionality() {
         document.getElementById('chat_content').children[1].remove();
       }
       if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
-      document.AI_INTEGRATION = originalState;
+      document.AI_INTEGRATION = { ...originalState };
     }
   });
   document.getElementById('submitChat').addEventListener('click', () => {
@@ -520,6 +505,11 @@ function popupFunctionality() {
                         }
                         let currentWidth = 150;
                         for (var xx = 0; xx < document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children.length; xx++) { //each top level block
+                          if(document.querySelector('.container').style.display != ""){
+                            document.querySelector('.container').style.display = '';
+                            document.querySelector('.container').style.zIndex = 509;
+                          }
+                      
                           const currentElement = document.getElementById(`CODEBLOCK_${randomId}_${i}`).children[0].children[xx];
                           currentElement.style.width = (currentElement.getBoundingClientRect().width * (currentWidth / currentElement.children[1].children[0].getBoundingClientRect().width)) + "px";
 
@@ -819,6 +809,7 @@ export default async function ({ addon, console }) {
       .then(data => {
         document.AI_INTEGRATION.AIModels = data;
         originalState.AIModels = data;
+        Object.freeze(originalState);
         helpers.updateAIModels(authToken.gemini, authToken.openrouter);
       })
       .catch(error => {

@@ -96,7 +96,7 @@ export default class helpers {
     }
     static messageErrorOccured(messageContents) {
         document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
-        document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": "Error reading response" });
+        //document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": "Error reading response" }); //not sure if the AI needs to know that it failed
 
         document.AI_INTEGRATION.AI_currently_blabbering = false;
         if (document.getElementById('currentlyBlabberingOnThis') != null) {
