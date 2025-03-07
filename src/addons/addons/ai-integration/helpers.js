@@ -1,6 +1,7 @@
 export default class helpers {
     constructor() {
     }
+    static FireAnimation = "<style>@keyframes scaleUpDown{0%,100%{transform:scaleY(1) scaleX(1)}50%,90%{transform:scaleY(1.1)}75%{transform:scaleY(.95)}80%{transform:scaleX(.95)}}@keyframes shake{0%,100%{transform:skewX(0) scale(1)}50%{transform:skewX(5deg) scale(.9)}}@keyframes particleUp{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;top:-100%;transform:scale(.5)}}@keyframes glow{0%,100%{background-color:#ef5a00}50%{background-color:#ff7800}}.fire{width:60px;height:60px;background-color:transparent;margin-left:8px;margin-top:17px;position:relative;display:block;}.fire-center{position:absolute;height:100%;width:100%;animation:scaleUpDown 3s ease-out;animation-iteration-count:infinite;animation-fill-mode:both}.fire-center .main-fire{position:absolute;width:100%;height:100%;background-image:radial-gradient(farthest-corner at 10px 0,#d43300 0,#ef5a00 95%);transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-center .particle-fire{position:absolute;top:60%;left:45%;width:2px;height:2px;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right{height:100%;width:100%;position:absolute;animation:shake 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right .main-fire{position:absolute;top:15%;right:-25%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-right .particle-fire{position:absolute;top:45%;left:50%;width:3.0303030303030303px;height:3.0303030303030303px;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left{position:absolute;height:100%;width:100%;animation:shake 3s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left .main-fire{position:absolute;top:15%;left:-20%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-left .particle-fire{position:absolute;top:10%;left:20%;width:10%;height:10%;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 3s infinite ease-out 0;animation-fill-mode:both}.fire-bottom .main-fire{position:absolute;top:30%;left:20%;width:75%;height:75%;background-color:#ff7800;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 100% 40%;filter:blur(10px);animation:glow 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}</style><div class=fire><div class=fire-left><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-center><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-right><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-bottom><div class=main-fire></div></div></div>";
     static closePopup() {
         if (document.querySelector('.container') == null) return;
         document.querySelector('.container').style.display = 'none';
@@ -116,7 +117,7 @@ export default class helpers {
 
     static isFirstRequest = true;
     static readWithTimeout(reader) {
-        const FIRST_TIMEOUT_MS = 6000;
+        const FIRST_TIMEOUT_MS = 60000;
         const DEFAULT_TIMEOUT_MS = 5000;
         const timeout = this.isFirstRequest ? FIRST_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
         this.isFirstRequest = false;
@@ -127,5 +128,61 @@ export default class helpers {
                 setTimeout(() => reject(new Error("Read operation timed out")), timeout)
             ),
         ]);
+    }
+    static async returnEntireProjectAsXML(addon) {
+        //create new XML document
+        const xmlDoc = document.implementation.createDocument("", "", null);
+
+        // Create a root element
+        const rootElement = xmlDoc.createElement("project");
+        xmlDoc.appendChild(rootElement);
+
+        for(var x of addon.tab.redux.state.scratchGui.vm.runtime.targets){
+        // Create a child element with text content
+        const childElement = xmlDoc.createElement("sprite");
+        childElement.innerHTML = x.blocks.toXML();
+        rootElement.appendChild(childElement);
+        }
+        // Serialize XML to string
+        const serializer = new XMLSerializer();
+        const xmlString = serializer.serializeToString(xmlDoc);
+
+        console.log(xmlString);
+    }
+    static APIKeyRequiredModal(){
+        const div = document.createElement('div');
+        div.className = 'container';
+        div.id = 'torchyPopup';
+        div.style.zIndex = 509;
+        div.style.position = 'absolute';
+        const divWidth = 452;
+        const divHeight = 302;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = document.documentElement.clientHeight;
+        const scrollY = window.scrollY || document.documentElement.scrollTop;
+        const tolerance = 10;
+        let newLeft = document.AI_INTEGRATION.X_COORDINATE;
+        let newTop = document.AI_INTEGRATION.Y_COORDINATE;
+        if (newLeft < tolerance) newLeft = tolerance;
+        if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+        if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
+        if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
+        div.style.left = `${newLeft}px`;
+        div.style.top = `${newTop}px`;
+        div.innerHTML = `<div class="content no_api_key" id="chat_content">
+          <div class="a"><svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="size-6" stroke="currentColor" stroke-width="1.5" id="closePopup">
+                    <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+      </div><div class="b">
+              <div class="c">
+                 ${this.FireAnimation}
+              </div>
+              <p class="d">To use Torchy, please add your API key in the addons page</p></div>
+      </div>`;
+        document.body.appendChild(div);
+        document.getElementById('closePopup').addEventListener('click', () => {
+          document.getElementById('torchyPopup').remove();
+          document.AI_INTEGRATION.popupOpen = false;
+        });
     }
 }

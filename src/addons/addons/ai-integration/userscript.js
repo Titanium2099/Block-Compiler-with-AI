@@ -44,10 +44,6 @@ document.addEventListener("mousemove", (event) => {
 });
 
 function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
-  if (document.AI_INTEGRATION.popupOpen) {
-    return;
-  }
-  document.AI_INTEGRATION.popupOpen = true;
   document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
   document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
 
@@ -56,7 +52,8 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   const attachedFile = fileAttached ? `<div class="attachedFile" id="attachedFile"><svg fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg height=24 width=24 class="svg"><path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path></svg><p class="texta">${fileAttachedText}</p><svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg stroke=currentColor stroke-width=1.5 class=svg2><path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path></svg></div>` : '';
 
 
-  if (document.querySelector('.container') != null) { //reopen the popup
+  if (document.querySelector('.container') != null || document.AI_INTEGRATION.popupOpen) { //reopen the popup
+    document.AI_INTEGRATION.popupOpen = true;
     document.querySelector('.container').style.display = '';
     document.querySelector('.container').style.zIndex = 509;
     //FINISH ADDING SUPPORT TO reopening popup
@@ -66,51 +63,25 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
 
     textareaa.value = inputValue;
 
+    if (textareaa.value.length > 64 || textareaa.value.includes('\n')) {
+      textareaa.style.height = 'auto';
+      textareaa.style.height = `${textareaa.scrollHeight}px`;
+      textareaa.style.top = '0px';
+    } else {
+      textareaa.style.height = '20px';
+      textareaa.style.top = '2px';
+    }
+
     if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
     var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
     document.getElementById("bottomBar").appendChild(parsedAttachFile.body.children[0]);
     helpers.removeAttachmentListener();
     return;
   }
-  //create new blob
-  const FireAnimation = "<style>@keyframes scaleUpDown{0%,100%{transform:scaleY(1) scaleX(1)}50%,90%{transform:scaleY(1.1)}75%{transform:scaleY(.95)}80%{transform:scaleX(.95)}}@keyframes shake{0%,100%{transform:skewX(0) scale(1)}50%{transform:skewX(5deg) scale(.9)}}@keyframes particleUp{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;top:-100%;transform:scale(.5)}}@keyframes glow{0%,100%{background-color:#ef5a00}50%{background-color:#ff7800}}.fire{width:60px;height:60px;background-color:transparent;margin-left:8px;margin-top:17px;position:relative;display:block;}.fire-center{position:absolute;height:100%;width:100%;animation:scaleUpDown 3s ease-out;animation-iteration-count:infinite;animation-fill-mode:both}.fire-center .main-fire{position:absolute;width:100%;height:100%;background-image:radial-gradient(farthest-corner at 10px 0,#d43300 0,#ef5a00 95%);transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-center .particle-fire{position:absolute;top:60%;left:45%;width:2px;height:2px;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right{height:100%;width:100%;position:absolute;animation:shake 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-right .main-fire{position:absolute;top:15%;right:-25%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-right .particle-fire{position:absolute;top:45%;left:50%;width:3.0303030303030303px;height:3.0303030303030303px;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left{position:absolute;height:100%;width:100%;animation:shake 3s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}.fire-left .main-fire{position:absolute;top:15%;left:-20%;width:80%;height:80%;background-color:#ef5a00;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 60% 40%;filter:drop-shadow(0 0 10px #d43322)}.fire-left .particle-fire{position:absolute;top:10%;left:20%;width:10%;height:10%;background-color:#ef5a00;border-radius:50%;filter:drop-shadow(0 0 10px #d43322);animation:particleUp 3s infinite ease-out 0;animation-fill-mode:both}.fire-bottom .main-fire{position:absolute;top:30%;left:20%;width:75%;height:75%;background-color:#ff7800;transform:scaleX(.8) rotate(45deg);border-radius:0 40% 100% 40%;filter:blur(10px);animation:glow 2s ease-out 0;animation-iteration-count:infinite;animation-fill-mode:both}</style><div class=fire><div class=fire-left><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-center><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-right><div class=main-fire></div><div class=particle-fire></div></div><div class=fire-bottom><div class=main-fire></div></div></div>";
-
+  document.AI_INTEGRATION.popupOpen = true;
 
   if (!document.AI_INTEGRATION.canUse) {
-    const div = document.createElement('div');
-    div.className = 'container';
-    div.id = 'torchyPopup';
-    div.style.zIndex = 509;
-    div.style.position = 'absolute';
-    const divWidth = 452;
-    const divHeight = 302;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = document.documentElement.clientHeight;
-    const scrollY = window.scrollY || document.documentElement.scrollTop;
-    const tolerance = 10;
-    let newLeft = document.AI_INTEGRATION.X_COORDINATE;
-    let newTop = document.AI_INTEGRATION.Y_COORDINATE;
-    if (newLeft < tolerance) newLeft = tolerance;
-    if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
-    if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
-    if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
-    div.style.left = `${newLeft}px`;
-    div.style.top = `${newTop}px`;
-    div.innerHTML = `<div class="content no_api_key" id="chat_content">
-      <div class="a"><svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="size-6" stroke="currentColor" stroke-width="1.5" id="closePopup">
-                <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-  </div><div class="b">
-          <div class="c">
-             ${FireAnimation}
-          </div>
-          <p class="d">To use Torchy, please add your API key in the addons page</p></div>
-  </div>`;
-    document.body.appendChild(div);
-    document.getElementById('closePopup').addEventListener('click', () => {
-      document.getElementById('torchyPopup').remove();
-      document.AI_INTEGRATION.popupOpen = false;
-    });
+    helpers.APIKeyRequiredModal();
     return;
   }
 
@@ -118,20 +89,18 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   const div = document.createElement('div');
   div.className = 'container';
   div.style.zIndex = 509;
-  div.style.position = 'absolute';
-
+  div.style.position = 'fixed';
   const divWidth = 452;
   const divHeight = 302;
   const viewportWidth = window.innerWidth;
-  const viewportHeight = document.documentElement.clientHeight;
-  const scrollY = window.scrollY || document.documentElement.scrollTop;
+  const viewportHeight = window.innerHeight;
   const tolerance = 10;
   let newLeft = document.AI_INTEGRATION.X_COORDINATE;
   let newTop = document.AI_INTEGRATION.Y_COORDINATE;
-  if (newLeft < tolerance) newLeft = tolerance;
-  if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+    if (newLeft < tolerance) newLeft = tolerance;
+  if (newTop < tolerance) newTop = tolerance;
   if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
-  if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
+  if (newTop + divHeight > viewportHeight - tolerance) newTop = viewportHeight - divHeight - tolerance;
   div.style.left = `${newLeft}px`;
   div.style.top = `${newTop}px`;
   div.innerHTML = `
@@ -146,7 +115,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
   <div class= content id= chat_content>
       <div class=Popup_Header>
           <div class=a>
-             ${FireAnimation}
+             ${helpers.FireAnimation}
           </div>
           <p class=b>Hi I'm Torchy, How can I help you today?
       </div>
@@ -200,7 +169,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
     offsetY = e.clientY - div.offsetTop;
     div.style.cursor = 'grabbing';
   });
-
+  
   document.addEventListener('mousemove', (e) => {
     if (isDragging) {
       if (!hasMoved) {
@@ -211,35 +180,34 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
         }
         hasMoved = true;
       }
-
-      // Get viewport and scroll dimensions
+  
+      // Get viewport dimensions
       const viewportWidth = window.innerWidth;
-      const viewportHeight = document.documentElement.clientHeight;
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-
+      const viewportHeight = window.innerHeight;
+  
       // Get div dimensions
       const divRect = div.getBoundingClientRect();
       const divWidth = divRect.width;
       const divHeight = divRect.height;
-
+  
       // Define tolerance
       const tolerance = 10;
-
+  
       // Calculate new position
       let newLeft = e.clientX - offsetX;
-      let newTop = e.clientY - offsetY + scrollY; // Adjust for scrolling
-
+      let newTop = e.clientY - offsetY;
+  
       // Prevent moving out of bounds with tolerance
       if (newLeft < tolerance) newLeft = tolerance;
-      if (newTop < scrollY + tolerance) newTop = scrollY + tolerance;
+      if (newTop < tolerance) newTop = tolerance;
       if (newLeft + divWidth > viewportWidth - tolerance) newLeft = viewportWidth - divWidth - tolerance;
-      if (newTop + divHeight > scrollY + viewportHeight - tolerance) newTop = scrollY + viewportHeight - divHeight - tolerance;
-
+      if (newTop + divHeight > viewportHeight - tolerance) newTop = viewportHeight - divHeight - tolerance;
+  
       div.style.left = newLeft + 'px';
       div.style.top = newTop + 'px';
     }
   });
-
+  
   document.addEventListener('mouseup', () => {
     isDragging = false;
     div.style.cursor = "default";
@@ -435,6 +403,7 @@ function popupFunctionality() {
             aiMessage.innerHTML = `<p class="message `+(Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text")+`" id="currentlyBlabberingOnThis">loading...</p>`;
             document.getElementById('chat_content').appendChild(aiMessage);
 
+            var chunkNumber = 0;
             const domParser = new DOMParser();
             helpers.isFirstRequest = true;                     
             helpers.readWithTimeout(reader)
@@ -672,9 +641,12 @@ function popupFunctionality() {
                           var div = document.createElement('div');
                           div.innerHTML = `<p style="text-align: center;">A non-fatal issue was detected with this code</p><div style="display: flex;margin: 10px;"></div>`;
                           var button = document.createElement('button');
+                          var button2 = document.createElement('button');
                           button.style = "margin-left: auto;margin-right: 10px;background-color: transparent;border: 1px solid var(--ui-tertiary);padding: 5px 10px;border-radius: 5px;";
                           button.innerText = "Render Anyways";
                           button.addEventListener("click", function (e) {
+                            button.disabled = true;
+                            button2.disabled = true;
                             e.preventDefault();
                             e.stopPropagation();
                             currentElement.parentElement.style = "width: fit-content;height: fit-content;margin: auto;";
@@ -683,10 +655,11 @@ function popupFunctionality() {
                             div.remove();
                           });
                           div.children[1].appendChild(button);
-                          button = document.createElement('button');
-                          button.style = "margin-right: auto;background-color: transparent;border: 1px solid var(--ui-tertiary);padding: 5px 10px;border-radius: 5px;";
-                          button.innerText = "Attempt to Repair";
-                          button.addEventListener("click", function (e) {
+                          button2.style = "margin-right: auto;background-color: transparent;border: 1px solid var(--ui-tertiary);padding: 5px 10px;border-radius: 5px;";
+                          button2.innerText = "Attempt to Repair";
+                          button2.addEventListener("click", function (e) {
+                            button.disabled = true;
+                            button2.disabled = true;
                             e.preventDefault();
                             e.stopPropagation();
                             //create new message
@@ -708,7 +681,7 @@ function popupFunctionality() {
                             document.getElementById('chat_content').appendChild(userMessage);
                             requestChat("the following errors occured while trying to parse the code (attempt to fix them):" + errorForChunk.map(error => error.error || "Unknown error").join("\n"));
                           });
-                          div.children[1].appendChild(button);
+                          div.children[1].appendChild(button2);
                           currentElement.parentElement.style = "width: 0px; height: 0px; display: none;";
                           currentElement.parentElement.parentElement.appendChild(div);
                           currentElement.parentElement.parentElement.parentElement.children[0].style.display = "none";
@@ -732,16 +705,18 @@ function popupFunctionality() {
 
                 const animatedTextClass = Gaddon.tab.redux.state.scratchGui.theme.theme.gui == "light" ? "animated-text-light" : "animated-text";
                 function updateMessageContents() {
+                  chunkNumber = 1;
                   var edittedStreamResult = streamResult.replace(/```(.*?)```/gs, () => `<div class="codeChunkOverlay"><p>Currently Processing Code Block</p></div>`);
-                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p></div>");
+                  edittedStreamResult = edittedStreamResult.replace(/```[\s\S]*$/, "<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p><p id=\"chunkNumber\">(Recieved "+chunkNumber+" chunk)</p></div>");
                   edittedStreamResult = converter.makeHtml(edittedStreamResult);
                   document.getElementById('currentlyBlabberingOnThis').innerHTML = edittedStreamResult;
                   document.getElementById('chat_content').scrollTop = document.getElementById('chat_content').scrollHeight;
                   reader.read().then(processText);
                 }
-                let instanceCount = 0;
                 if ((streamResult.match(/```/g) || []).length % 2 == 1) { //fixed animation resetting bug
-                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<div><p class=\"" + animatedTextClass + "\">currently writing a code block</p></div>")) {
+                  if (document.getElementById('currentlyBlabberingOnThis').innerHTML.includes("<p class=\"" + animatedTextClass + "\">currently writing a code block</p>")) {
+                    chunkNumber++;
+                    document.getElementById("chunkNumber").innerText = `(Received ${chunkNumber} chunks for this code block)`;
                     reader.read().then(processText);
                   } else {
                     updateMessageContents()
@@ -772,7 +747,6 @@ export default async function ({ addon, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
   //mainWorkspace = Blockly.getMainWorkspace();
   mainWorkspace = addon.tab.traps.getWorkspace();
-  window.AAA = mainWorkspace;
   GetSVG.init(Blockly);
   authToken.gemini = addon.settings.get("GeminiAPIKey");
   authToken.openrouter = addon.settings.get("OpenRouterAPIKey");
@@ -882,6 +856,9 @@ export default async function ({ addon, console }) {
   );
 
   addon.tab.redux.addEventListener("statechanged", ({ detail }) => {
+    if(detail.action.type === "scratch-gui/project-state/START_LOADING_VM_FILE_UPLOAD"){
+      helpers.closePopup();
+    }
     if (detail.action.type === "scratch-gui/navigation/ACTIVATE_TAB") {
       const activeTabIndex = detail.action.activeTabIndex;
       //console.log(`Tab changed to index: ${activeTabIndex}`);
