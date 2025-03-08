@@ -1,3 +1,5 @@
+const toolboxOverrides = require('./assets/toolboxOverrides.json');
+
 export default class helpers {
     constructor() {
     }
@@ -217,14 +219,33 @@ export default class helpers {
             var newBlock = Blockly.Xml.domToBlock(blockElement, workspace)
             var returnType = extractBlockReturnType(newBlock);
             var blockCopy = block.cloneNode(true);
-            blockCopy.removeAttribute("id");
-            blockCopy.setAttribute("blockType", returnType);
-            rootElement.appendChild(blockCopy);
+
+            if (toolboxOverrides.overrides[blockCopy.getAttribute("type")] !== undefined) {
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(toolboxOverrides.overrides[blockCopy.getAttribute("type")], "text/xml");
+                var overrideBlockElement = xmlDoc.getElementsByTagName("block")[0];
+                overrideBlockElement.setAttribute("blockType", returnType);
+                rootElement.appendChild(overrideBlockElement);
+            }else{
+                blockCopy.removeAttribute("id");
+                blockCopy.setAttribute("blockType", returnType);
+                rootElement.appendChild(blockCopy);    
+            }
+        }
+        for(var x of Object.keys(toolboxOverrides.insert)){
+            if (toolboxOverrides.insert[x] !== undefined) {
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(toolboxOverrides.insert[x], "text/xml");
+                var overrideBlockElement = xmlDoc.getElementsByTagName("block")[0];
+                rootElement.appendChild(overrideBlockElement);
+            }else{
+                console.error("A REALlY WEIRD ERROR OCCURED");
+            }
         }
         workspace.dispose();
         var serializer = new XMLSerializer();
         var xmlString = serializer.serializeToString(sterializedToolbox);
-        console.log("[DEBUG] toolbox has # of blocks: " + blocks.length);
+        console.log("[DEBUG] toolbox has # of blocks: " + sterializedToolbox.getElementsByTagName("block").length);
         return xmlString.replace(/>\s+</g, '><').trim();
     }
 }
