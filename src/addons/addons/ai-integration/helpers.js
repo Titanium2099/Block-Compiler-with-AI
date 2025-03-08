@@ -137,11 +137,11 @@ export default class helpers {
         const rootElement = xmlDoc.createElement("project");
         xmlDoc.appendChild(rootElement);
 
-        for(var x of addon.tab.redux.state.scratchGui.vm.runtime.targets){
-        // Create a child element with text content
-        const childElement = xmlDoc.createElement("sprite");
-        childElement.innerHTML = x.blocks.toXML();
-        rootElement.appendChild(childElement);
+        for (var x of addon.tab.redux.state.scratchGui.vm.runtime.targets) {
+            // Create a child element with text content
+            const childElement = xmlDoc.createElement("sprite");
+            childElement.innerHTML = x.blocks.toXML();
+            rootElement.appendChild(childElement);
         }
         // Serialize XML to string
         const serializer = new XMLSerializer();
@@ -149,7 +149,7 @@ export default class helpers {
 
         console.log(xmlString);
     }
-    static APIKeyRequiredModal(){
+    static APIKeyRequiredModal() {
         const div = document.createElement('div');
         div.className = 'container';
         div.id = 'torchyPopup';
@@ -181,8 +181,50 @@ export default class helpers {
       </div>`;
         document.body.appendChild(div);
         document.getElementById('closePopup').addEventListener('click', () => {
-          document.getElementById('torchyPopup').remove();
-          document.AI_INTEGRATION.popupOpen = false;
+            document.getElementById('torchyPopup').remove();
+            document.AI_INTEGRATION.popupOpen = false;
         });
+    }
+    static returnSterilizedToolbox(Gaddon) {
+        if (Gaddon == null) return;
+        function extractBlockReturnType(block) {
+            if (block) {
+                var returnType = "Stack";
+                if (block.outputConnection) {
+                    // Check if the block is a boolean
+                    if (block.outputConnection.check_ && block.outputConnection.check_.includes("Boolean")) {
+                        returnType = "Reporter";
+                    } else {
+                        returnType = "Boolean";
+                    }
+                }
+                return returnType;
+            } else {
+                return null;
+            }
+        }
+        var workspace = new Blockly.Workspace();
+
+        var toolbox = Gaddon.tab.redux.state.scratchGui.toolbox.toolboxXML;
+        var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(toolbox, "text/xml");
+        var sterializedToolbox = document.implementation.createDocument("", "", null);
+        var rootElement = sterializedToolbox.createElement("toolbox");
+        sterializedToolbox.appendChild(rootElement);
+        var blocks = xmlDoc.getElementsByTagName("block");
+        for (var block of blocks) {
+            var blockElement = block.cloneNode(true);
+            var newBlock = Blockly.Xml.domToBlock(blockElement, workspace)
+            var returnType = extractBlockReturnType(newBlock);
+            var blockCopy = block.cloneNode(true);
+            blockCopy.removeAttribute("id");
+            blockCopy.setAttribute("blockType", returnType);
+            rootElement.appendChild(blockCopy);
+        }
+        workspace.dispose();
+        var serializer = new XMLSerializer();
+        var xmlString = serializer.serializeToString(sterializedToolbox);
+        console.log("[DEBUG] toolbox has # of blocks: " + blocks.length);
+        return xmlString.replace(/>\s+</g, '><').trim();
     }
 }

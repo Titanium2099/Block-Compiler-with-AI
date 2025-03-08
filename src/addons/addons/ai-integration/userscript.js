@@ -376,7 +376,7 @@ function popupFunctionality() {
       var data = {
         api_key: authTokenToUse,
         message: messageContents,
-        history: document.AI_INTEGRATION.chatHistory,
+        history: [{ "role": "user", "message": helpers.returnSterilizedToolbox(Gaddon,mainWorkspace) },...document.AI_INTEGRATION.chatHistory],
         ai_model: document.getElementById('AI_Selector_select').value,
       };
 
