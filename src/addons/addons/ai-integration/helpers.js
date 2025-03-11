@@ -101,6 +101,11 @@ export default class helpers {
         document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
         //document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": "Error reading response" }); //not sure if the AI needs to know that it failed
 
+        //clean up attachments
+        document.AI_INTEGRATION.currentInputHasAttachment = false;
+        if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
+
+
         document.AI_INTEGRATION.AI_currently_blabbering = false;
         if (document.getElementById('currentlyBlabberingOnThis') != null) {
             document.getElementById('currentlyBlabberingOnThis').innerHTML = "<h1 class=\"errorMessage\">Error reading response</h1>";

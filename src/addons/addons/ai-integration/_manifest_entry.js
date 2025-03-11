@@ -6,7 +6,7 @@ const manifest = {
   "description": "Adds AI integration into the editor including code completion, code generation, sprite generation, background generation, and more.\n\n\nDISCLAIMER: We do not store any request data or your API keys. Your API keys are only sent with requests and remain fully stored locally on your computer. All models we use are free, ensuring no charges apply. However, for added security, we recommend setting restrictions on your API keys. If you'd like to verify this, our AI backend is open-source—feel free to check it out yourself!",
   "info": [
     {
-      "text": "If you need help with creating an API key, check out our guide here: https://blog.codetorch.net/gemini-api-key-for-torchy/",
+      "text": "If you need help with creating an API key, check out our guides here: https://blog.codetorch.net/gemini-api-key-for-torchy/ , https://blog.codetorch.net/openrouter-api-key-for-torchy/",
       "id": "warning"
     }
   ],
