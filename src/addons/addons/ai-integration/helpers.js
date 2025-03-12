@@ -195,21 +195,19 @@ export default class helpers {
     static returnSterilizedToolbox(Gaddon) {
         if (Gaddon == null) return;
         function extractBlockReturnType(block) {
-            if (block) {
-                var returnType = "Stack";
-                if (block.outputConnection) {
-                    // Check if the block is a boolean
-                    if (block.outputConnection.check_ && block.outputConnection.check_.includes("Boolean")) {
-                        returnType = "Reporter";
-                    } else {
-                        returnType = "Boolean";
-                    }
+            if (!block) return null;
+            var returnType = "Stack";
+            if (block.outputConnection) {
+                if (block.outputConnection.check_ && block.outputConnection.check_.includes("Boolean")) {
+                    returnType = "Reporter";
+                } else {
+                    returnType = "Boolean";
                 }
-                return returnType;
-            } else {
-                return null;
+            } else if (!block.previousConnection && block.nextConnection) {
+                returnType = "Hat";
             }
-        }
+            return returnType;
+        }        
         var workspace = new Blockly.Workspace();
 
         var toolbox = Gaddon.tab.redux.state.scratchGui.toolbox.toolboxXML;
