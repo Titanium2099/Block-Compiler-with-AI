@@ -33,7 +33,6 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   AIModels: [],
 };
 
-const originalState = JSON.parse(JSON.stringify(document.AI_INTEGRATION));
 Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
   return mainWorkspace;
 }
@@ -258,7 +257,13 @@ function popupFunctionality() {
         document.getElementById('chat_content').children[1].remove();
       }
       if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
-      document.AI_INTEGRATION = { ...originalState };
+      document.AI_INTEGRATION.AI_currently_blabbering = false;
+      document.AI_INTEGRATION.currentInputHasAttachment = false;
+      document.AI_INTEGRATION.CodeChunks = [];
+      document.AI_INTEGRATION.AllCodeChunksEverAdded = [];
+      document.AI_INTEGRATION.processedCodeChunks = [];
+      document.AI_INTEGRATION.chatHistory = [];
+      document.AI_INTEGRATION.errorsDetected = [];
     }
   });
   document.getElementById('submitChat').addEventListener('click', () => {
@@ -782,8 +787,6 @@ export default async function ({ addon, console }) {
       })
       .then(data => {
         document.AI_INTEGRATION.AIModels = data;
-        originalState.AIModels = data;
-        Object.freeze(originalState);
         helpers.updateAIModels(authToken.gemini, authToken.openrouter);
       })
       .catch(error => {
