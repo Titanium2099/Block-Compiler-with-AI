@@ -9,6 +9,8 @@
         "operator_and":"<block type=\"operator_and\"><value name=\"OPERAND1\"></value><value name=\"OPERAND2\"></value></block>",
         "operator_or":"<block type=\"operator_or\"><value name=\"OPERAND1\"></value><value name=\"OPERAND2\"></value></block>",
         "operator_not":"<block type=\"operator_not\"><value name=\"OPERAND\"></value></block>",
+        "event_broadcast":"<block type=\"event_broadcast\"><value name=\"BROADCAST_INPUT\"><shadow type=\"event_broadcast_menu\"><field name=\"BROADCAST_OPTION\" variabletype=\"broadcast_msg\">message1</field></shadow></value></block>",
+        "event_broadcastandwait":"<block type=\"event_broadcastandwait\"><value name=\"BROADCAST_INPUT\"><shadow type=\"event_broadcast_menu\"><field name=\"BROADCAST_OPTION\" variabletype=\"broadcast_msg\">message1</field></shadow></value></block>",
         "event_whenbroadcastreceived":"<block type=\"event_whenbroadcastreceived\"><field name=\"BROADCAST_OPTION\" variabletype=\"broadcast_msg\">message1</field></block>"
     },
     "insert":{
