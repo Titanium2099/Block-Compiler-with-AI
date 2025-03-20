@@ -94,10 +94,10 @@ const VideoStep = ({ expanded, video, title }) => {
         if (!currentVideo) return;
         currentVideo.src = video;
 
-        if(!title) {
+        if (!title) {
             currentVideo.controls = true;
             currentVideo.autoplay = false;
-        }else{
+        } else {
             currentVideo.controls = false;
             currentVideo.autoplay = true;
             currentVideo.muted = true;
@@ -119,7 +119,7 @@ const VideoStep = ({ expanded, video, title }) => {
         };
     }, [expanded, video]);
 
-    if(!title) {
+    if (!title) {
         return (
             <div className={styles.stepVideo}>
                 <video
@@ -128,7 +128,7 @@ const VideoStep = ({ expanded, video, title }) => {
                 />
             </div>
         );
-    }else{
+    } else {
         return (
             <Fragment>
                 <div className={styles.stepTitle}>
@@ -168,6 +168,20 @@ const ImageStep = ({ title, image }) => (
 );
 
 ImageStep.propTypes = {
+    //image: PropTypes.string.isRequired,
+    title: PropTypes.node.isRequired
+};
+
+const HTMLStep = ({ title, html }) => (
+    <Fragment>
+        <div dangerouslySetInnerHTML={{ __html: html }} style={{ marginTop: '30px' }} />
+        <div className={styles.stepTitle} style={{ marginTop: 'auto', marginBottom: 'auto' }}>
+            {title}
+        </div>
+    </Fragment>
+);
+
+HTMLStep.propTypes = {
     //image: PropTypes.string.isRequired,
     title: PropTypes.node.isRequired
 };
@@ -223,9 +237,9 @@ const PreviewsStep = ({ deckIds, content, onActivateDeckFactory, onShowAll }) =>
     <Fragment>
         <div className={styles.stepTitle}>
             <FormattedMessage
-                defaultMessage="More things to try!"
-                description="Title card with more things to try"
-                id="gui.cards.more-things-to-try"
+                defaultMessage="Next Steps!"
+                description="Title card with next steps"
+                id="gui.cards.next-steps"
             />
         </div>
         <div className={styles.decks}>
@@ -243,18 +257,6 @@ const PreviewsStep = ({ deckIds, content, onActivateDeckFactory, onShowAll }) =>
                     <div className={styles.deckName}>{content[id].name}</div>
                 </div>
             ))}
-        </div>
-        <div className={styles.seeAll}>
-            <div
-                className={styles.seeAllButton}
-                onClick={onShowAll}
-            >
-                <FormattedMessage
-                    defaultMessage="See more"
-                    description="Title for button to see more in how-to library"
-                    id="gui.cards.see-more"
-                />
-            </div>
         </div>
     </Fragment>
 );
@@ -353,37 +355,41 @@ const Cards = props => {
                             onShrinkExpandCards={onShrinkExpandCards}
                         />
                         <div className={expanded ? styles.stepBody : styles.hidden}>
-                            {steps[step].deckIds ? (
+                            {steps[step].innerHTML ? (
+                                <HTMLStep
+                                    html={steps[step].innerHTML}
+                                    title={steps[step].title}
+                                />
+                            ) : steps[step].deckIds ? (
                                 <PreviewsStep
                                     content={content}
                                     deckIds={steps[step].deckIds}
                                     onActivateDeckFactory={onActivateDeckFactory}
                                     onShowAll={onShowAll}
                                 />
-                            ) : (
-                                steps[step].video ? (
-                                    showVideos ? (
-                                        <VideoStep
-                                            dragging={dragging}
-                                            expanded={expanded}
-                                            video={translateVideo(steps[step].video, locale)}
-                                            title={steps[step].title}
-                                        />
-                                    ) : ( // Else show the deck image and title
-                                        <ImageStep
-                                            image={content[activeDeckId].img}
-                                            title={content[activeDeckId].name}
-                                        />
-                                    )
-                                ) : (
-                                    <ImageStep
-                                        image={steps[step].img}
+                            ) : steps[step].video ? (
+                                showVideos ? (
+                                    <VideoStep
+                                        dragging={dragging}
+                                        expanded={expanded}
+                                        video={translateVideo(steps[step].video, locale)}
                                         title={steps[step].title}
                                     />
+                                ) : (
+                                    <ImageStep
+                                        image={content[activeDeckId].img}
+                                        title={content[activeDeckId].name}
+                                    />
                                 )
+                            ) : (
+                                <ImageStep
+                                    image={steps[step].img}
+                                    title={steps[step].title}
+                                />
                             )}
                             {steps[step].trackingPixel && steps[step].trackingPixel}
                         </div>
+
                         <NextPrevButtons
                             expanded={expanded}
                             isRtl={isRtl}
