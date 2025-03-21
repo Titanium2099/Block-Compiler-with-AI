@@ -1,4 +1,5 @@
 const toolboxOverrides = require('./assets/toolboxOverrides.json');
+const defaultToolbox = require('./assets/defaultToolbox.json');
 
 export default class helpers {
     constructor() {
@@ -192,8 +193,11 @@ export default class helpers {
             document.AI_INTEGRATION.popupOpen = false;
         });
     }
-    static returnSterilizedToolbox(Gaddon) {
+    static returnSterilizedToolbox(Gaddon,allowExtensions = false) {
         if (Gaddon == null) return;
+        if(allowExtensions){
+            return defaultToolbox.default;
+        }
         function extractBlockReturnType(block) {
             if (!block) return null;
             var returnType = "Stack";
@@ -248,7 +252,8 @@ export default class helpers {
         workspace.dispose();
         var serializer = new XMLSerializer();
         var xmlString = serializer.serializeToString(sterializedToolbox);
-        console.log("[DEBUG] toolbox has # of blocks: " + sterializedToolbox.getElementsByTagName("block").length);
+        console.log("[DEBUG] toolbox has #",sterializedToolbox.getElementsByTagName("block").length," of blocks");
+        
         return xmlString.replace(/>\s+</g, '><').trim();
     }
 }

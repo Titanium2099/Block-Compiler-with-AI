@@ -154,6 +154,10 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
         </svg>
         </div>
         ${attachedFile}
+        <div class="attachedFile" id="AATUCEB">
+          <input type="checkbox" id="AATUCEB_CB" name="AATUCEB_CB" value="AATUCEB_CB" />
+          <label for="AATUCEB_CB" class="texta" style="margin-top: 1px;">Allow usage of custom extensions</label>
+        </div>
       </div>
   </div>`;
 
@@ -247,6 +251,14 @@ function popupFunctionality() {
   helpers.removeAttachmentListener();
   helpers.updateAIModels(authToken.gemini, authToken.openrouter);
 
+  document.getElementById('AATUCEB_CB').addEventListener('change', (e) => {
+    if (e.target.checked) {
+      ReduxStore.dispatch({
+        type: "scratch-gui/alerts/SHOW_ALERT",
+        alertId: "TorchyCustomBlockWarning",
+      })
+    }
+  });
   document.getElementById('closePopup').addEventListener('click', () => {
     helpers.closePopup();
   });
@@ -279,6 +291,10 @@ function popupFunctionality() {
 
   function internal() {
     if (document.AI_INTEGRATION.AI_currently_blabbering) {
+      ReduxStore.dispatch({
+        type: "scratch-gui/alerts/SHOW_ALERT",
+        alertId: "TorchyWaitForAIToFinishWarning",
+      })
       return;
     }
     document.AI_INTEGRATION.AI_currently_blabbering = true;
@@ -381,7 +397,7 @@ function popupFunctionality() {
       var data = {
         api_key: authTokenToUse,
         message: messageContents,
-        history: [{ "role": "user", "message": helpers.returnSterilizedToolbox(Gaddon,mainWorkspace) },...document.AI_INTEGRATION.chatHistory],
+        history: [{ "role": "user", "message": helpers.returnSterilizedToolbox(Gaddon,mainWorkspace,document.getElementById("AATUCEB_CB").checked) },...document.AI_INTEGRATION.chatHistory],
         ai_model: document.getElementById('AI_Selector_select').value,
       };
 
