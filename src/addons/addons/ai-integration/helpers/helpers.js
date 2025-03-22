@@ -1,5 +1,5 @@
-const toolboxOverrides = require('./assets/toolboxOverrides.json');
-const defaultToolbox = require('./assets/defaultToolbox.json');
+const toolboxOverrides = require('../assets/toolboxOverrides.json');
+const defaultToolbox = require('../assets/defaultToolbox.json');
 
 export default class helpers {
     constructor() {

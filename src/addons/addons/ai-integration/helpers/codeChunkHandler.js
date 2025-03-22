@@ -20,7 +20,7 @@ export async function handleRawCodeChunk(codeChunk, uniqueCommentID,mainWorkspac
         "uniqueCommentID": uniqueCommentID,
     }
     try {
-        codeChunk = "<BlockChunkdata2938512938>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</BlockChunkdata2938512938>";
+        codeChunk = "<xml>" + codeChunk.replace("```xml", "").replaceAll("```", "") + "</xml>";
         let xmlCode = xmlParser.parseFromString(codeChunk, "text/xml");
         //check if it successfully parsed
         if (xmlCode.getElementsByTagName("parsererror").length > 0) {
@@ -64,7 +64,7 @@ export async function handleRawCodeChunk(codeChunk, uniqueCommentID,mainWorkspac
         for (var x of response.variables) if (mainWorkspace.getVariable(x) != null) response.overlappingVars.push(x)
         for (var x of response.lists) if (mainWorkspace.getVariable(x, "list") != null) response.overlappingLists.push(x)
 
-        response.BlocksAsXML = "<xml>" + xmlSerializer.serializeToString(xmlCode).replace("<BlockChunkdata2938512938>", "").replace("</BlockChunkdata2938512938>", "") + "</xml>";
+        response.BlocksAsXML = xmlSerializer.serializeToString(xmlCode);
         response.blocksAsSVG = await blockParser.getSVG(response.BlocksAsXML, uniqueCommentID);
     } catch (e) {
         console.error(e);
