@@ -14,6 +14,16 @@ export default class Attachment {
         }
         Attachment._blockly = blockly;
     }
+    static getAttachmentReady(attachment) {
+        if (attachment && attachment.nodeType === Node.ELEMENT_NODE) {
+            attachment = Attachment._blockly.Xml.domToText(attachment);
+        }    
+        // Remove unnecessary attributes and whitespace
+        return attachment
+        .replace(/x="[^"]+"|y="[^"]+"|id="[^"]+"/g, "")
+        .replace(/\s{2,}/g, " ")
+        .replace(" >", ">");
+    }
 
     attachment(attachment, spriteName = "Sprite1") {
         if (Attachment._blockly === null) {

@@ -408,11 +408,11 @@ function popupFunctionality() {
     
     var attachmentCode = "";
     if(attachmentType == "1"){
-      attachmentCode = "\nAttached Code:" + Blockly.Xml.domToText(attachment.GetAttachment(Blockly.Xml.workspaceToDom(mainWorkspace)));
+      attachmentCode = "\nAttached Code:" + Attachment.getAttachmentReady(attachment.GetAttachment(Blockly.Xml.workspaceToDom(mainWorkspace)));
     }else if(attachmentType == "2"){
-      attachmentCode = "\nAttached Code:" + Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
+      attachmentCode = "\nAttached Code:" + Attachment.getAttachmentReady(Blockly.Xml.workspaceToDom(mainWorkspace));
     }else if(attachmentType == "3"){
-      attachmentCode = "\nAttached Code:" + helpers.returnEntireProjectAsXML(Gaddon);
+      attachmentCode = "\nAttached Code:" + Attachment.getAttachmentReady(helpers.returnEntireProjectAsXML(Gaddon));
     }
     const messageContents = input.value + attachmentCode + "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
     input.value = '';
@@ -943,7 +943,6 @@ export default async function ({ addon, console }) {
   });
 
   window.addEventListener('ai-button-clicked', function () {
-    //HANDLE ATTACHMENT
     createBasePopup(2, "");
   });
 }
