@@ -95,7 +95,7 @@ export default class helpers {
         document.getElementById('Context_Selector_select').style.width = "26px";
         document.getElementById('Context_Selector_select').children[0].disabled = true;
         document.getElementById('Context_Selector_select').children.innerText = "Code Chunk";
-      }
+    }
     static messageErrorOccured(messageContents) {
         document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
         //document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": "Error reading response" }); //not sure if the AI needs to know that it failed
@@ -190,9 +190,9 @@ export default class helpers {
             document.AI_INTEGRATION.popupOpen = false;
         });
     }
-    static returnSterilizedToolbox(Gaddon,allowExtensions = false) {
+    static returnSterilizedToolbox(Gaddon, allowExtensions = false) {
         if (Gaddon == null) return;
-        if(allowExtensions){
+        if (!allowExtensions) {
             return defaultToolbox.default;
         }
         function extractBlockReturnType(block) {
@@ -208,7 +208,7 @@ export default class helpers {
                 returnType = "Hat";
             }
             return returnType;
-        }        
+        }
         var workspace = new Blockly.Workspace();
 
         var toolbox = Gaddon.tab.redux.state.scratchGui.toolbox.toolboxXML;
@@ -219,38 +219,40 @@ export default class helpers {
         sterializedToolbox.appendChild(rootElement);
         var blocks = xmlDoc.getElementsByTagName("block");
         for (var block of blocks) {
-            var blockElement = block.cloneNode(true);
-            var newBlock = Blockly.Xml.domToBlock(blockElement, workspace)
-            var returnType = extractBlockReturnType(newBlock);
-            var blockCopy = block.cloneNode(true);
+            if (!block.getAttribute("type").includes("procedures_")) { // firefox's toolbox includes procedures problem is that procedures cannot be parsed by Blockly
+                var blockElement = block.cloneNode(true);
+                var newBlock = Blockly.Xml.domToBlock(blockElement, workspace)
+                var returnType = extractBlockReturnType(newBlock);
+                var blockCopy = block.cloneNode(true);
 
-            if (toolboxOverrides.overrides[blockCopy.getAttribute("type")] !== undefined) {
-                var parser = new DOMParser();
-                var xmlDoc = parser.parseFromString(toolboxOverrides.overrides[blockCopy.getAttribute("type")], "text/xml");
-                var overrideBlockElement = xmlDoc.getElementsByTagName("block")[0];
-                overrideBlockElement.setAttribute("blockType", returnType);
-                rootElement.appendChild(overrideBlockElement);
-            }else{
-                blockCopy.removeAttribute("id");
-                blockCopy.setAttribute("blockType", returnType);
-                rootElement.appendChild(blockCopy);    
+                if (toolboxOverrides.overrides[blockCopy.getAttribute("type")] !== undefined) {
+                    var parser = new DOMParser();
+                    var xmlDoc = parser.parseFromString(toolboxOverrides.overrides[blockCopy.getAttribute("type")], "text/xml");
+                    var overrideBlockElement = xmlDoc.getElementsByTagName("block")[0];
+                    overrideBlockElement.setAttribute("blockType", returnType);
+                    rootElement.appendChild(overrideBlockElement);
+                } else {
+                    blockCopy.removeAttribute("id");
+                    blockCopy.setAttribute("blockType", returnType);
+                    rootElement.appendChild(blockCopy);
+                }
             }
         }
-        for(var x of Object.keys(toolboxOverrides.insert)){
+        for (var x of Object.keys(toolboxOverrides.insert)) {
             if (toolboxOverrides.insert[x] !== undefined) {
                 var parser = new DOMParser();
                 var xmlDoc = parser.parseFromString(toolboxOverrides.insert[x], "text/xml");
                 var overrideBlockElement = xmlDoc.getElementsByTagName("block")[0];
                 rootElement.appendChild(overrideBlockElement);
-            }else{
+            } else {
                 console.error("A REALlY WEIRD ERROR OCCURED");
             }
         }
         workspace.dispose();
         var serializer = new XMLSerializer();
         var xmlString = serializer.serializeToString(sterializedToolbox);
-        console.log("[DEBUG] toolbox has #",sterializedToolbox.getElementsByTagName("block").length," of blocks");
-        
+        console.log("[DEBUG] toolbox has", sterializedToolbox.getElementsByTagName("block").length, "blocks");
+
         return xmlString.replace(/>\s+</g, '><').trim();
     }
 }
