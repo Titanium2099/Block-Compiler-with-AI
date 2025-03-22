@@ -2,10 +2,12 @@ import { handleRawCodeChunk } from "./codeChunkHandler.js";
 import GetSVG from "./parser.js";
 import helpers from "./helpers.js";
 import showdown from "showdown";
+import Attachment from "./attachment.js";
 
 const apiUrl = "http://127.0.0.1:5000";
 let authToken = {};
 const converter = new showdown.Converter();
+const attachment = new Attachment();
 let Gaddon;
 const resistanceThreshold = 10;
 
@@ -18,11 +20,6 @@ window.addEventListener('blockError', (event) => {
 
 document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it just make debugging alot easier (will do it properly later)
   AI_currently_blabbering: false,
-  currentInputHasAttachment: false,
-  attachmentDetails: {
-    attachmentText: "",
-    attachmentBlocks: "",
-  },
   CodeChunks: [],
   AllCodeChunksEverAdded: [],
   processedCodeChunks: [],
@@ -33,24 +30,41 @@ document.AI_INTEGRATION = { //probably the dumbest way to possibly do this, it j
   AIModels: [],
 };
 
-Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
-  return mainWorkspace;
+function workspaceOverride() {
+  if (typeof Blockly !== 'undefined') {
+    Blockly.getMainWorkspace = function () { // I have to do this as the getmainworkspace gets linked to the getSVG parsing one 
+    return mainWorkspace;
+  }
+}else{
+  setTimeout(() => {
+    workspaceOverride();
+  }, 100);
 }
+}
+workspaceOverride();
 
 document.addEventListener("mousemove", (event) => {
   document.AI_INTEGRATION.X_COORDINATE = event.clientX;
   document.AI_INTEGRATION.Y_COORDINATE = event.clientY;
 });
 
-function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Entire Sprite", inputValue = "") {
-  document.AI_INTEGRATION.currentInputHasAttachment = fileAttached;
-  document.AI_INTEGRATION.attachmentDetails.attachmentText = fileAttached ? fileAttachedText : "";
 
 
-  //create new div
-  const attachedFile = fileAttached ? `<div class="attachedFile" id="attachedFile"><svg fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg height=24 width=24 class="svg"><path d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z" stroke-linecap= round stroke-linejoin= round stroke= currentcolor stroke-width= 2></path></svg><p class="texta">${fileAttachedText}</p><svg id="removeAttachement" fill= none viewBox="0 0 24 24" xmlns=http://www.w3.org/2000/svg stroke=currentColor stroke-width=1.5 class=svg2><path d="M6 18 18 6M6 6l12 12" stroke-linecap= round stroke-linejoin= round></path></svg></div>` : '';
-
-
+function updateCodeChunkAttachment(AttachmentDetails) {
+  document.getElementById('Context_Selector_select').value = '1';
+  document.getElementById('Context_Selector_select').children[0].disabled = false;
+  attachment.attachment(AttachmentDetails, vm.runtime.getEditingTarget().sprite.name);
+  document.getElementById('Context_Selector_select').children[0].innerText = attachment.spriteName;
+  document.getElementById('Context_Selector_select').style.width = "fit-content";
+}
+/**
+ * 
+ * @param {*} fileAttachmentType 0 = no attachment, 1 = code chunk, 2 = entire sprite, 3 = entire project 
+ * @param {*} inputValue 
+ * @returns 
+ */
+function createBasePopup(fileAttachmentType = 0, inputValue = "") {
+  fileAttachmentType = String(fileAttachmentType);
   if (document.querySelector('.container') != null || document.AI_INTEGRATION.popupOpen) { //reopen the popup
     document.AI_INTEGRATION.popupOpen = true;
     document.querySelector('.container').style.display = '';
@@ -71,10 +85,7 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
       textareaa.style.top = '2px';
     }
 
-    if (document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
-    var parsedAttachFile = (new DOMParser()).parseFromString(attachedFile, "text/html");
-    document.getElementById("bottomBar").appendChild(parsedAttachFile.body.children[0]);
-    helpers.removeAttachmentListener();
+    document.getElementById('Context_Selector_select').value = fileAttachmentType;
     return;
   }
   document.AI_INTEGRATION.popupOpen = true;
@@ -153,7 +164,24 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
           <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"></path>
         </svg>
         </div>
-        ${attachedFile}
+        <div class="attachedFile" id="attachedFile">
+          <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" height="24" width="24"
+            class="svg">
+            <path
+              d="M2 7V14.7519H4.53246L5.9122 16.0909H8.12402L9.50376 14.7519H22V7H9.50376L8.12402 8.33905H5.9122L4.53246 7H2Z"
+              stroke-linecap="round" stroke-linejoin="round" stroke="currentcolor" stroke-width="2"></path>
+          </svg>
+          <select name="AI Model Selector" id="Context_Selector_select">
+            <option value="1" disabled>Code Chunk</option>
+            <option value="0">None</option>
+            <option value="2">Entire Sprite</option>
+            <option value="3">Entire Project</option>
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6 arrow">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+          </svg>
+        </div>
         <div class="attachedFile" id="AATUCEB">
           <input type="checkbox" id="AATUCEB_CB" name="AATUCEB_CB" value="AATUCEB_CB" />
           <label for="AATUCEB_CB" class="texta" style="margin-top: 1px;">Allow usage of custom extensions</label>
@@ -242,14 +270,34 @@ function createBasePopup(fileAttached = false, fileAttachedText = "Unknown - Ent
       textareaa.style.top = '2px';
     }
   });
+  document.getElementById('Context_Selector_select').value = fileAttachmentType;
+  if(fileAttachmentType == "1"){
+    document.getElementById('Context_Selector_select').style.width = "26px";
+  }else if(fileAttachmentType == "3"){
+    document.getElementById('Context_Selector_select').style.width = "66px";
+  }else if(fileAttachmentType == "2"){
+    document.getElementById('Context_Selector_select').style.width = "60px";
+  }else{
+    document.getElementById('Context_Selector_select').style.width = "fit-content";
+  }
 
   popupFunctionality();
 }
 
-
 function popupFunctionality() {
-  helpers.removeAttachmentListener();
   helpers.updateAIModels(authToken.gemini, authToken.openrouter);
+
+  document.getElementById("Context_Selector_select").addEventListener("change", (e) => {
+    if (e.target.value == "0") {
+      e.target.style.width = "26px";
+    } else if (e.target.value == "3") {
+      e.target.style.width = "66px";
+    } else if( e.target.value == "2") {
+      e.target.style.width = "60px";
+    } else{
+      e.target.style.width = "fit-content"; 
+    }
+  });
 
   document.getElementById('AATUCEB_CB').addEventListener('change', (e) => {
     if (e.target.checked) {
@@ -268,9 +316,8 @@ function popupFunctionality() {
       while (document.getElementById('chat_content').children.length > 1) {
         document.getElementById('chat_content').children[1].remove();
       }
-      if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
+      helpers.disableCodeChunkAttachment();
       document.AI_INTEGRATION.AI_currently_blabbering = false;
-      document.AI_INTEGRATION.currentInputHasAttachment = false;
       document.AI_INTEGRATION.CodeChunks = [];
       document.AI_INTEGRATION.AllCodeChunksEverAdded = [];
       document.AI_INTEGRATION.processedCodeChunks = [];
@@ -290,6 +337,7 @@ function popupFunctionality() {
   });
 
   function internal() {
+    const attachmentType = document.getElementById('Context_Selector_select').value;
     if (document.AI_INTEGRATION.AI_currently_blabbering) {
       ReduxStore.dispatch({
         type: "scratch-gui/alerts/SHOW_ALERT",
@@ -303,8 +351,9 @@ function popupFunctionality() {
     if (input.value.trim() == "") {
       return;
     }
-    if (document.AI_INTEGRATION.currentInputHasAttachment) {
-      document.getElementById('attachedFile').remove();
+    if (attachmentType != "0") {
+      helpers.disableCodeChunkAttachment();
+
       var userMessage = document.createElement('div');
       userMessage.className = 'user-message';
       var messageDiv = document.createElement('div');
@@ -330,7 +379,7 @@ function popupFunctionality() {
       svgElement.appendChild(pathElement);
       var attachmentText = document.createElement('p');
       attachmentText.className = 'p';
-      attachmentText.textContent = document.AI_INTEGRATION.attachmentDetails.attachmentText;
+      attachmentText.textContent = (attachmentType == "1" ? attachment.spriteName : (attachmentType == "2" ? "Entire Sprite" : "Entire Project"));
       fileAttachmentDiv.appendChild(svgElement);
       fileAttachmentDiv.appendChild(attachmentText);
       messageDiv.appendChild(fileAttachmentDiv);
@@ -356,7 +405,16 @@ function popupFunctionality() {
       .filter(target => target.isSprite && target.getName() !== "Stage")
       .map(sprite => sprite.getName())
       .join(", ");
-    const messageContents = input.value + (document.AI_INTEGRATION.currentInputHasAttachment ? "\nAttached Code:" + document.AI_INTEGRATION.attachmentDetails.attachmentBlocks : "") + "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
+    
+    var attachmentCode = "";
+    if(attachmentType == "1"){
+      attachmentCode = "\nAttached Code:" + Blockly.Xml.domToText(attachment.GetAttachment(Blockly.Xml.workspaceToDom(mainWorkspace)));
+    }else if(attachmentType == "2"){
+      attachmentCode = "\nAttached Code:" + Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
+    }else if(attachmentType == "3"){
+      attachmentCode = "\nAttached Code:" + helpers.returnEntireProjectAsXML(Gaddon);
+    }
+    const messageContents = input.value + attachmentCode + "\n\n\nContext:\nSprite Customes: " + customNames + "\nSprite Sounds: " + soundNames + "\nAll Sprites Names: " + allSpriteNames + "\nCurrent Sprite Name:" + vm.runtime.getEditingTarget().sprite.name;
     input.value = '';
     //reset input height
     input.style.height = '20px';
@@ -434,7 +492,7 @@ function popupFunctionality() {
                   document.AI_INTEGRATION.AI_currently_blabbering = false;
                   document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
                   document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": streamResult });
-                  document.AI_INTEGRATION.currentInputHasAttachment = false;
+                  helpers.disableCodeChunkAttachment();
 
                   async function processAndRenderCodeChunks() {
                     var randomId = Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -769,6 +827,7 @@ export default async function ({ addon, console }) {
   //mainWorkspace = Blockly.getMainWorkspace();
   mainWorkspace = addon.tab.traps.getWorkspace();
   GetSVG.init(Blockly);
+  Attachment._blockly = Blockly;
   authToken.gemini = addon.settings.get("GeminiAPIKey");
   authToken.openrouter = addon.settings.get("OpenRouterAPIKey");
   Gaddon = addon;
@@ -781,8 +840,7 @@ export default async function ({ addon, console }) {
   if (authToken.gemini == "" && authToken.openrouter == "") {
     document.AI_INTEGRATION.canUse = false;
     window.addEventListener('ai-button-clicked', function () {
-      document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-      createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
+      createBasePopup(2, "");
     });
     return;
   }else{
@@ -816,8 +874,7 @@ export default async function ({ addon, console }) {
         text: "Explain this Sprite",
         callback: () => {
           console.log("Explain this Sprite");
-          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-          createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "Explain this Sprite:");
+          createBasePopup(2, "Explain this Sprite:");
         },
         separator: true,
       });
@@ -832,10 +889,8 @@ export default async function ({ addon, console }) {
         enabled: true,
         callback: () => {
           console.log("Explain this block", block);
-          console.log(Blockly.Xml.blockToDom(block));
-          console.log(Blockly.Xml.domToText(Blockly.Xml.blockToDom(block)));
-          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, helpers.currentSpriteName() + " - Code Block", "Explain this:");
+          createBasePopup(1, "Explain this:");
+          updateCodeChunkAttachment(Blockly.Xml.blockToDom(block));
         },
         separator: true,
       });
@@ -850,8 +905,8 @@ export default async function ({ addon, console }) {
         enabled: true,
         callback: () => {
           console.log("Debug this code", block);
-          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(true, helpers.currentSpriteName() + " - Code Block", "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
+          createBasePopup(1, "I have the following issue with my code {REPLACE THIS WITH ISSUE}, please help me debug it:");
+          updateCodeChunkAttachment(Blockly.Xml.blockToDom(block));
         },
       });
       return items;
@@ -865,8 +920,8 @@ export default async function ({ addon, console }) {
         enabled: true,
         callback: () => {
           console.log("New Chat on this block", block);
-          document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.blockToDom(block));
-          createBasePopup(false, "", "");
+          createBasePopup(1, "");
+          updateCodeChunkAttachment(Blockly.Xml.blockToDom(block));
         },
       });
       return items;
@@ -888,7 +943,7 @@ export default async function ({ addon, console }) {
   });
 
   window.addEventListener('ai-button-clicked', function () {
-    document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(mainWorkspace));
-    createBasePopup(true, helpers.currentSpriteName() + " - Entire Sprite", "");
+    //HANDLE ATTACHMENT
+    createBasePopup(2, "");
   });
 }

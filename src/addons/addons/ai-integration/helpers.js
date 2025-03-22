@@ -55,14 +55,6 @@ export default class helpers {
 
         return result;
     }
-    static removeAttachmentListener() {
-        document.getElementById('removeAttachement').addEventListener('click', () => {
-            document.getElementById('attachedFile').remove();
-            document.AI_INTEGRATION.currentInputHasAttachment = false;
-            document.AI_INTEGRATION.attachmentDetails.attachmentText = "";
-            document.AI_INTEGRATION.attachmentDetails.attachmentBlocks = "";
-        });
-    }
     static updateAIModels(geminiKey, openrouterKey) {
         if (document.getElementById('AI_Selector_select') == null) return;
         for (var i of document.AI_INTEGRATION.AIModels) {
@@ -98,14 +90,17 @@ export default class helpers {
         return fetchPromise
             .finally(() => clearTimeout(timeoutId));
     }
+    static disableCodeChunkAttachment() {
+        document.getElementById('Context_Selector_select').value = '0';
+        document.getElementById('Context_Selector_select').style.width = "26px";
+        document.getElementById('Context_Selector_select').children[0].disabled = true;
+        document.getElementById('Context_Selector_select').children.innerText = "Code Chunk";
+      }
     static messageErrorOccured(messageContents) {
         document.AI_INTEGRATION.chatHistory.push({ "role": "user", "message": messageContents });
         //document.AI_INTEGRATION.chatHistory.push({ "role": "assistant", "message": "Error reading response" }); //not sure if the AI needs to know that it failed
 
-        //clean up attachments
-        document.AI_INTEGRATION.currentInputHasAttachment = false;
-        if(document.getElementById('attachedFile') != null) document.getElementById('attachedFile').remove();
-
+        helpers.disableCodeChunkAttachment();
 
         document.AI_INTEGRATION.AI_currently_blabbering = false;
         if (document.getElementById('currentlyBlabberingOnThis') != null) {
@@ -137,7 +132,7 @@ export default class helpers {
             ),
         ]);
     }
-    static async returnEntireProjectAsXML(addon) {
+    static returnEntireProjectAsXML(addon) {
         //create new XML document
         const xmlDoc = document.implementation.createDocument("", "", null);
 
@@ -148,6 +143,8 @@ export default class helpers {
         for (var x of addon.tab.redux.state.scratchGui.vm.runtime.targets) {
             // Create a child element with text content
             const childElement = xmlDoc.createElement("sprite");
+            //add sprite name as attribute
+            childElement.setAttribute("name", x.getName());
             childElement.innerHTML = x.blocks.toXML();
             rootElement.appendChild(childElement);
         }
@@ -155,7 +152,7 @@ export default class helpers {
         const serializer = new XMLSerializer();
         const xmlString = serializer.serializeToString(xmlDoc);
 
-        console.log(xmlString);
+        return xmlString;
     }
     static APIKeyRequiredModal() {
         const div = document.createElement('div');
